@@ -1,4 +1,4 @@
-package object
+package objects
 
 type Blob struct {
 	data []byte

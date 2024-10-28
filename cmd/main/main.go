@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -10,6 +11,7 @@ import (
 var (
 	commands = []*command.Command{
 		command.InitCommand(),
+		command.CatFileCommand(),
 	}
 )
 
@@ -19,6 +21,7 @@ func main() {
 	if len(os.Args) < 2 {
 		os.Exit(1)
 	}
+	flag.Parse()
 	args := os.Args[1:]
 	commandName := args[0]
 	for _, command := range commands {

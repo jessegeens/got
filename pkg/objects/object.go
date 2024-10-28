@@ -1,4 +1,4 @@
-package object
+package objects
 
 import (
 	"bytes"
@@ -29,7 +29,7 @@ type GitObject interface {
 
 // func (o *GitObject) Deserialize() {}
 
-func ReadObject(repo *repository.Repository, sha string) (*GitObject, error) {
+func ReadObject(repo *repository.Repository, sha string) (GitObject, error) {
 	path, err := repo.RepositoryFile(false, "objects", sha[0:2], sha[2:])
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func Encode(o GitObject) ([]byte, error) {
 		return nil, err
 	}
 
-	header := []byte(o.Type() + " " + string(len(data)))
+	header := []byte(o.Type() + " " + strconv.Itoa(len(data)))
 	encoded := append(append(header, '\x00'), data...)
 	return encoded, nil
 }
@@ -137,4 +137,8 @@ func WriteObject(o GitObject, repo *repository.Repository) (string, error) {
 	}
 
 	return hash, nil
+}
+
+func Find(repo *repository.Repository, name string) (string, error) {
+	return name, nil
 }
