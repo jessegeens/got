@@ -19,15 +19,29 @@ type GitObject interface {
 	Type() string
 }
 
-// func New() (*GitObject, error) {
-// 	return nil, nil
-// }
+// Enum for Git object types
+type GitObjectType int
 
-// func (o *GitObject) Serialize() (string, error) {
-// 	return "", errors.New("Not implemented")
-// }
+const (
+	commit GitObjectType = iota
+	tree   GitObjectType = iota
+	tag    GitObjectType = iota
+	blob   GitObjectType = iota
+)
 
-// func (o *GitObject) Deserialize() {}
+func ParseType(objectType string) (GitObjectType, error) {
+	switch objectType {
+	case "commit":
+		return commit, nil
+	case "tree":
+		return tree, nil
+	case "tag":
+		return tag, nil
+	case "blob":
+		return blob, nil
+	}
+	return 0, errors.New("Not a valid object type: " + objectType)
+}
 
 func ReadObject(repo *repository.Repository, sha string) (GitObject, error) {
 	path, err := repo.RepositoryFile(false, "objects", sha[0:2], sha[2:])
@@ -141,4 +155,13 @@ func WriteObject(o GitObject, repo *repository.Repository) (string, error) {
 
 func Find(repo *repository.Repository, name string) (string, error) {
 	return name, nil
+}
+
+func ObjectHash(fileContents []byte, objectType GitObjectType, repo *repository.Repository) (string, error) {
+	var obj GitObject = nil
+	switch objectType {
+	case blob:
+		obj = &Blob{data: fileContents}
+	}
+	return WriteObject(obj, repo)
 }
