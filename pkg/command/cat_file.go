@@ -11,7 +11,7 @@ func CatFileCommand() *Command {
 	command := newCommand("cat-file")
 	command.Action = func(args []string) error {
 		objHash := args[0]
-		repo, err := repository.Find("")
+		repo, err := repository.Find(".")
 		if err != nil {
 			return err
 		}
