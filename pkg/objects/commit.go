@@ -15,8 +15,8 @@ func (c *Commit) Deserialize(data []byte) error {
 	return nil
 }
 
-func (c *Commit) Type() string {
-	return "commit"
+func (c *Commit) Type() GitObjectType {
+	return TypeCommit
 }
 
 func (c *Commit) Message() string {

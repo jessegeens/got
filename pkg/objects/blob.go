@@ -13,6 +13,6 @@ func (b *Blob) Deserialize(data []byte) error {
 	return nil
 }
 
-func (b *Blob) Type() string {
-	return "blob"
+func (b *Blob) Type() GitObjectType {
+	return TypeBlob
 }

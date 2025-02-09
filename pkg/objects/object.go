@@ -16,31 +16,31 @@ import (
 type GitObject interface {
 	Serialize() ([]byte, error)
 	Deserialize([]byte) error
-	Type() string
+	Type() GitObjectType
 }
 
 // Enum for Git object types
-type GitObjectType int
+type GitObjectType string
 
 const (
-	commit GitObjectType = iota
-	tree   GitObjectType = iota
-	tag    GitObjectType = iota
-	blob   GitObjectType = iota
+	TypeCommit GitObjectType = "commit"
+	TypeTree   GitObjectType = "tree"
+	TypeTag    GitObjectType = "tag"
+	TypeBlob   GitObjectType = "blob"
 )
 
 func ParseType(objectType string) (GitObjectType, error) {
 	switch objectType {
-	case "commit":
-		return commit, nil
-	case "tree":
-		return tree, nil
-	case "tag":
-		return tag, nil
-	case "blob":
-		return blob, nil
+	case string(TypeCommit):
+		return TypeCommit, nil
+	case string(TypeTree):
+		return TypeTree, nil
+	case string(TypeTag):
+		return TypeTag, nil
+	case string(TypeBlob):
+		return TypeBlob, nil
 	}
-	return 0, errors.New("Not a valid object type: " + objectType)
+	return "", errors.New("Not a valid object type: " + objectType)
 }
 
 func ReadObject(repo *repository.Repository, sha string) (GitObject, error) {
@@ -84,6 +84,7 @@ func ReadObject(repo *repository.Repository, sha string) (GitObject, error) {
 		return nil, errors.New("malformed object " + sha + ", bad length")
 	}
 
+	// TODO(jgeens)
 	switch objType {
 	case "commit":
 	case "tree":
@@ -101,7 +102,7 @@ func Encode(o GitObject) ([]byte, error) {
 		return nil, err
 	}
 
-	header := []byte(o.Type() + " " + strconv.Itoa(len(data)))
+	header := []byte(string(o.Type()) + " " + strconv.Itoa(len(data)))
 	encoded := append(append(header, '\x00'), data...)
 	return encoded, nil
 }
@@ -160,7 +161,7 @@ func Find(repo *repository.Repository, name string) (string, error) {
 func ObjectHash(fileContents []byte, objectType GitObjectType, repo *repository.Repository) (string, error) {
 	var obj GitObject = nil
 	switch objectType {
-	case blob:
+	case TypeBlob:
 		obj = &Blob{data: fileContents}
 	}
 	return WriteObject(obj, repo)

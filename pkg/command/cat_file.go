@@ -15,11 +15,11 @@ func CatFileCommand() *Command {
 		if err != nil {
 			return err
 		}
-		obj, err := objects.Find(repo, objHash)
+		sha, err := objects.Find(repo, objHash)
 		if err != nil {
 			return err
 		}
-		object, err := objects.ReadObject(repo, obj)
+		object, err := objects.ReadObject(repo, sha)
 		if err != nil {
 			return err
 		}

@@ -1,2 +1,2 @@
-# go-toolbox
-Set of common tools, rewritten in Go
+# Got
+A small Git client, written in Go

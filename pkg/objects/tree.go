@@ -22,17 +22,17 @@ type TreeLeaf struct {
 }
 
 type Tree struct {
-	items []*TreeLeaf
+	Items []*TreeLeaf
 }
 
 func (t *Tree) Serialize() ([]byte, error) {
 	// First we sort the leaves
-	sort.Slice(t.items, func(i, j int) bool {
-		return sortingKey(t.items[i]) < sortingKey(t.items[j])
+	sort.Slice(t.Items, func(i, j int) bool {
+		return sortingKey(t.Items[i]) < sortingKey(t.Items[j])
 	})
 
 	data := []byte{}
-	for _, leaf := range t.items {
+	for _, leaf := range t.Items {
 		data = append(data, leaf.Mode...)
 		data = append(data, ' ')
 		data = append(data, leaf.Path...)
@@ -45,12 +45,12 @@ func (t *Tree) Serialize() ([]byte, error) {
 
 func (t *Tree) Deserialize(data []byte) error {
 	items, err := parseTree(data)
-	t.items = items
+	t.Items = items
 	return err
 }
 
-func (t *Tree) Type() string {
-	return "tree"
+func (t *Tree) Type() GitObjectType {
+	return TypeTree
 }
 
 func (l *TreeLeaf) PrintSHA() string {
@@ -58,7 +58,10 @@ func (l *TreeLeaf) PrintSHA() string {
 
 	// Convert to hex, with left padding to 40 chars if necessary
 	return fmt.Sprintf("%40x", int64(rawSha))
+}
 
+func (l *TreeLeaf) PrintPath() string {
+	return string(l.Path)
 }
 
 func parseTree(data []byte) ([]*TreeLeaf, error) {
