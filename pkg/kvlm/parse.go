@@ -6,7 +6,7 @@ type Kvlm struct {
 	Okv     OrderedKV
 }
 
-// Parse kvlm as byte array into kvlmm struct
+// Parse kvlm as byte array into kvlm struct
 func Parse(raw []byte, start int, msg *Kvlm) error {
 	// This function is recursive: it reads a key/value pair, then calls
 	// itself back with a pointer to the next kv pair.  So we first need to know

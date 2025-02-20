@@ -26,3 +26,7 @@ func (c *Commit) Message() string {
 func (c *Commit) GetValue(key string) ([]byte, bool) {
 	return c.data.Okv.Get(key)
 }
+
+func NewCommit(data *kvlm.Kvlm) *Commit {
+	return &Commit{data: data}
+}
