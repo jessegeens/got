@@ -15,7 +15,7 @@ func CatFileCommand() *Command {
 		if err != nil {
 			return err
 		}
-		sha, err := objects.Find(repo, objHash)
+		sha, err := objects.Find(repo, objHash, objects.TypeNoTypeSpecified, true)
 		if err != nil {
 			return err
 		}

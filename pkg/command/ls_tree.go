@@ -26,7 +26,7 @@ func LsTreeCommand() *Command {
 }
 
 func lsTree(repo *repository.Repository, ref, prefix string, recursive bool) error {
-	sha, err := objects.Find(repo, ref)
+	sha, err := objects.Find(repo, ref, objects.TypeNoTypeSpecified, true)
 	if err != nil {
 		return err
 	}

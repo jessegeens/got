@@ -41,7 +41,7 @@ func TagCommand() *Command {
 }
 
 func tagCreate(repo *repository.Repository, name, ref string, createTagObject bool) error {
-	sha, err := objects.Find(repo, ref)
+	sha, err := objects.Find(repo, ref, objects.TypeNoTypeSpecified, true)
 	if err != nil {
 		return err
 	}

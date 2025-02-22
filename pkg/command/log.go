@@ -24,7 +24,7 @@ func handleLogCommand(commit string) error {
 	if err != nil {
 		return err
 	}
-	obj, err := objects.Find(repo, commit)
+	obj, err := objects.Find(repo, commit, objects.TypeNoTypeSpecified, true)
 	if err != nil {
 		return err
 	}
