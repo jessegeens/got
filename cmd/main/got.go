@@ -10,8 +10,16 @@ import (
 
 var (
 	commands = []*command.Command{
-		command.InitCommand(),
 		command.CatFileCommand(),
+		command.CheckoutCommand(),
+		command.HashObjectCommand(),
+		command.InitCommand(),
+		command.LogCommand(),
+		command.LsFilesCommand(),
+		command.LsTreeCommand(),
+		command.RevParseCommand(),
+		command.ShowRefCommand(),
+		command.TagCommand(),
 	}
 )
 
