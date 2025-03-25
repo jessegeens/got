@@ -11,6 +11,7 @@ import (
 var (
 	commands = []*command.Command{
 		command.CatFileCommand(),
+		command.CheckIgnoreCommand(),
 		command.CheckoutCommand(),
 		command.HashObjectCommand(),
 		command.InitCommand(),
