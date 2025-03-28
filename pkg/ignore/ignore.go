@@ -6,6 +6,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/danwakefield/fnmatch"
 	"github.com/jessegeens/go-toolbox/pkg/fs"
 	"github.com/jessegeens/go-toolbox/pkg/index"
 	"github.com/jessegeens/go-toolbox/pkg/objects"
@@ -92,14 +93,34 @@ func Read(repo *repository.Repository) (*Ignore, error) {
 	}, nil
 }
 
-// TODO(jgeens): implement
 // Returns true if the given path is to be ignored according to the gitignore rules
-func (i *Ignore) Check(path string) bool {
-	// for _, r := range i.Rules {
-	// 	if r.Matches(path) {
-	// 		return true
-	// 	}
-	// }
+func (i *Ignore) ShouldBeIgnored(path string) bool {
+	// We start by matching agains the scoped rules, working our way up from
+	// the deepest parent to the farthest
+	// If nothing matches, we check the absolute rules
+	parents := fs.Parents(path)
+	for _, parent := range parents {
+		ruleset := i.Scoped[parent]
+		for _, rule := range ruleset {
+			if rule.ShouldBeIncluded(path) {
+				return false
+			}
+			if rule.Matches(path) {
+				return true
+			}
+		}
+	}
+	for _, rule := range i.Absolute {
+		if rule.Matches(path) {
+			if rule.ShouldBeIncluded(path) {
+				return false
+			}
+			if rule.Matches(path) {
+				return true
+			}
+		}
+	}
+
 	return false
 }
 
@@ -152,5 +173,9 @@ func parseLine(line string) (*Rule, error) {
 }
 
 func (r *Rule) Matches(path string) bool {
-	return false
+	return fnmatch.Match(string(r.Pattern), path, 0)
+}
+
+func (r *Rule) ShouldBeIncluded(path string) bool {
+	return r.Matches(path) && r.Exclude
 }

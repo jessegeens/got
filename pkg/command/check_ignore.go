@@ -31,7 +31,7 @@ func CheckIgnoreCommand() *Command {
 		}
 
 		for _, path := range paths {
-			if ign.Check(path) {
+			if ign.ShouldBeIgnored(path) {
 				fmt.Println(path)
 			}
 		}

@@ -90,7 +90,7 @@ func Create(repositoryPath string) (*Repository, error) {
 func Find(childPath string) (*Repository, error) {
 	realPath, err := filepath.Abs(childPath)
 	if err != nil {
-		// handle err
+		return nil, err
 	}
 
 	if IsDirectory(path.Join(realPath, ".git")) {

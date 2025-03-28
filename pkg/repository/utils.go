@@ -12,7 +12,7 @@ func PathExists(path string) bool {
 
 func IsDirectory(path string) bool {
 	fileInfo, err := os.Stat(path)
-	if !os.IsExist(err) {
+	if err != nil && !os.IsExist(err) {
 		return false
 	}
 	return fileInfo.IsDir()
