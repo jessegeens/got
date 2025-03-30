@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jessegeens/go-toolbox/pkg/fs"
 	"github.com/jessegeens/go-toolbox/pkg/references"
 	"github.com/jessegeens/go-toolbox/pkg/repository"
 )
@@ -33,6 +34,10 @@ const (
 	TypeNoTypeSpecified GitObjectType = ""
 )
 
+func (g GitObjectType) String() string {
+	return string(g)
+}
+
 func ParseType(objectType string) (GitObjectType, error) {
 	switch objectType {
 	case string(TypeCommit):
@@ -53,7 +58,7 @@ func ReadObject(repo *repository.Repository, sha string) (GitObject, error) {
 		return nil, err
 	}
 
-	if !repository.IsFile(path) {
+	if !fs.IsFile(path) {
 		return nil, nil
 	}
 
@@ -135,7 +140,7 @@ func WriteObject(o GitObject, repo *repository.Repository) (string, error) {
 		return "", err
 	}
 
-	if !repository.PathExists(path) {
+	if !fs.PathExists(path) {
 		f, err := os.Open(path)
 		if err != nil {
 			return "", err

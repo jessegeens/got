@@ -6,7 +6,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
+	"github.com/jessegeens/go-toolbox/pkg/fs"
 	"gopkg.in/ini.v1"
 )
 
@@ -45,12 +47,12 @@ func Create(repositoryPath string) (*Repository, error) {
 	repo, _ := New(repositoryPath, true)
 
 	// Make sure path doesn't exist or that it is an empty dir
-	if PathExists(repo.worktree) {
-		if !IsDirectory(repo.worktree) {
+	if fs.PathExists(repo.worktree) {
+		if !fs.IsDirectory(repo.worktree) {
 			return nil, errors.New("not a directory: " + repo.worktree)
 		}
 
-		if IsDirectory(repo.gitdir) && !IsEmptyDirectory(repo.gitdir) {
+		if fs.IsDirectory(repo.gitdir) && !fs.IsEmptyDirectory(repo.gitdir) {
 			return nil, errors.New("gitdir does not seem to be empty: " + repo.gitdir)
 		}
 	} else {
@@ -66,13 +68,13 @@ func Create(repositoryPath string) (*Repository, error) {
 	}
 
 	repoFile, _ := repo.RepositoryFile(true, "description")
-	err := WriteStringToFile(repoFile, "Unnamed repository; edit this file 'description' to name the repository.\n")
+	err := fs.WriteStringToFile(repoFile, "Unnamed repository; edit this file 'description' to name the repository.\n")
 	if err != nil {
 		return nil, errors.New("Failed to create repository description: " + err.Error())
 	}
 
 	repoFile, _ = repo.RepositoryFile(true, "HEAD")
-	err = WriteStringToFile(repoFile, "ref: refs/heads/master\n")
+	err = fs.WriteStringToFile(repoFile, "ref: refs/heads/master\n")
 	if err != nil {
 		return nil, errors.New("Failed to create repository HEAD: " + err.Error())
 	}
@@ -93,7 +95,7 @@ func Find(childPath string) (*Repository, error) {
 		return nil, err
 	}
 
-	if IsDirectory(path.Join(realPath, ".git")) {
+	if fs.IsDirectory(path.Join(realPath, ".git")) {
 		return New(realPath, false)
 	}
 
@@ -138,6 +140,24 @@ func (r *Repository) RepositoryDir(create bool, paths ...string) (string, error)
 		}
 		return "", errors.New("path does not exist and create = false")
 	}
+}
+
+// Returns the branch name if we're on a branch, whether we're on a branch,
+// and any eventual errors
+func (r *Repository) GetActiveBranch() (string, bool, error) {
+	headFile, err := r.RepositoryFile(false, "HEAD")
+	if err != nil {
+		return "", false, err
+	}
+	head, err := os.ReadFile(headFile)
+	if err != nil {
+		return "", false, err
+	}
+
+	if strings.HasPrefix(string(head), "ref: refs/heads/") {
+		return string(head[16:]), true, nil
+	}
+	return "", false, nil
 }
 
 func defaultRepositoryConfig() *ini.File {

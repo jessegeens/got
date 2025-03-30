@@ -5,8 +5,13 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"maps"
+	"path"
 	"sort"
 	"strings"
+
+	"github.com/jessegeens/go-toolbox/pkg/fs"
+	"github.com/jessegeens/go-toolbox/pkg/repository"
 )
 
 // Trees look like this when serialized:
@@ -119,4 +124,47 @@ func sortingKey(leaf *TreeLeaf) string {
 		return string(leaf.Path)
 	}
 	return string(append(leaf.Path, '/'))
+}
+
+// Given a repository and a reference to a tree object, return the tree
+// in the form of a map, where the keys are full paths and tha values are SHAs
+func MapFromTree(repo *repository.Repository, treeRef string) (map[string]string, error) {
+	return mapFromTree(repo, treeRef, "")
+}
+
+func mapFromTree(repo *repository.Repository, treeRef string, pathPrefix string) (map[string]string, error) {
+	ret := make(map[string]string)
+
+	treeSha, err := Find(repo, treeRef, TypeNoTypeSpecified, true)
+	if err != nil {
+		return nil, err
+	}
+
+	obj, err := ReadObject(repo, treeSha)
+	if err != nil {
+		return nil, err
+	}
+	tree, ok := obj.(*Tree)
+	if !ok {
+		return nil, errors.New("passed reference " + treeSha + " does not correspond to a tree, but is a " + obj.Type().String())
+	}
+
+	for _, leaf := range tree.Items {
+		fullPath := path.Join(pathPrefix, string(leaf.Path))
+
+		// If the path is a directory, (i.e. the child is another tree), we recurse
+		// Otherwise, we set the SHA
+		if fs.IsDirectory(fullPath) {
+			res, err := mapFromTree(repo, string(leaf.Sha), fullPath)
+			if err != nil {
+				return nil, err
+			}
+			maps.Copy(ret, res)
+		} else {
+			ret[fullPath] = string(leaf.Sha)
+		}
+	}
+
+	return ret, nil
+
 }

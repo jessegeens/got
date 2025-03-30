@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/jessegeens/go-toolbox/pkg/fs"
 	"github.com/jessegeens/go-toolbox/pkg/repository"
 )
 
@@ -57,7 +58,7 @@ func list(repo *repository.Repository, path string) (map[Reference]any, error) {
 	for _, dir := range entries {
 		subdir := filepath.Join(path, dir.Name())
 		ref := Reference(dir.Name())
-		if repository.IsDirectory(subdir) {
+		if fs.IsDirectory(subdir) {
 			res, err := list(repo, subdir)
 			if err != nil {
 				return nil, err

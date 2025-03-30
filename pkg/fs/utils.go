@@ -3,6 +3,7 @@ package fs
 
 import (
 	"errors"
+	"io"
 	"os"
 	"os/user"
 	"strings"
@@ -41,4 +42,45 @@ func parents(path string, prts []string) []string {
 		return parents(parent, prts)
 	}
 	return prts
+}
+
+func PathExists(path string) bool {
+	_, err := os.Stat(path)
+	return os.IsExist(err)
+}
+
+func IsDirectory(path string) bool {
+	fileInfo, err := os.Stat(path)
+	if err != nil && !os.IsExist(err) {
+		return false
+	}
+	return fileInfo.IsDir()
+}
+
+func IsEmptyDirectory(path string) bool {
+	if !IsDirectory(path) {
+		return false
+	}
+
+	f, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+
+	_, err = f.Readdirnames(1)
+	return err == io.EOF
+}
+
+func IsFile(path string) bool {
+	fileInfo, err := os.Stat(path)
+	if !os.IsExist(err) {
+		return false
+	}
+	return !fileInfo.IsDir()
+}
+
+// TODO(jgeens): implement
+func WriteStringToFile(path string, contents string) error {
+	return nil
 }
