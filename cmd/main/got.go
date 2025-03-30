@@ -20,6 +20,7 @@ var (
 		command.LsTreeCommand(),
 		command.RevParseCommand(),
 		command.ShowRefCommand(),
+		command.StatusCommand(),
 		command.TagCommand(),
 	}
 )
