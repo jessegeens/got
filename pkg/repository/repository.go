@@ -160,6 +160,14 @@ func (r *Repository) GetActiveBranch() (string, bool, error) {
 	return "", false, nil
 }
 
+func (r *Repository) WorkTree() string {
+	return r.worktree
+}
+
+func (r *Repository) GitDir() string {
+	return r.gitdir
+}
+
 func defaultRepositoryConfig() *ini.File {
 	cfg := ini.Empty()
 	cfg.NewSection("core")
