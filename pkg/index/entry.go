@@ -5,12 +5,12 @@ import (
 	"time"
 )
 
-type ModeType uint8
+type ModeType uint16
 
 const (
-	ModeTypeRegular = ModeType(uint8(8))  // 0000 1000
-	ModeTypeSymlink = ModeType(uint8(10)) // 0000 1010
-	ModeTypeGitlink = ModeType(uint8(14)) // 0000 1110
+	ModeTypeRegular = ModeType(uint16(8))  // 0000 1000
+	ModeTypeSymlink = ModeType(uint16(10)) // 0000 1010
+	ModeTypeGitlink = ModeType(uint16(14)) // 0000 1110
 )
 
 type Entry struct {

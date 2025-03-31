@@ -57,6 +57,14 @@ func IsDirectory(path string) bool {
 	return fileInfo.IsDir()
 }
 
+func IsFile(path string) bool {
+	fileInfo, err := os.Stat(path)
+	if err != nil && !os.IsExist(err) {
+		return false
+	}
+	return !fileInfo.IsDir()
+}
+
 func IsEmptyDirectory(path string) bool {
 	if !IsDirectory(path) {
 		return false
@@ -70,14 +78,6 @@ func IsEmptyDirectory(path string) bool {
 
 	_, err = f.Readdirnames(1)
 	return err == io.EOF
-}
-
-func IsFile(path string) bool {
-	fileInfo, err := os.Stat(path)
-	if !os.IsExist(err) {
-		return false
-	}
-	return !fileInfo.IsDir()
 }
 
 // TODO(jgeens): implement

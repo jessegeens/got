@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"strconv"
 	"time"
 
+	"github.com/jessegeens/go-toolbox/pkg/fs"
 	"github.com/jessegeens/go-toolbox/pkg/repository"
 )
 
@@ -32,7 +34,7 @@ func Read(repo *repository.Repository) (*Index, error) {
 	}
 
 	// New repositories don't have an index file yet
-	if _, err := os.Stat(indexFile); errors.Is(err, os.ErrNotExist) {
+	if !fs.Exists(indexFile) {
 		return New([]*Entry{}), nil
 	}
 
@@ -43,6 +45,76 @@ func Read(repo *repository.Repository) (*Index, error) {
 
 	return parseIndex(index)
 
+}
+
+func (i *Index) Write(repo *repository.Repository) error {
+	filepath, err := repo.RepositoryFile(false, "index")
+	if err != nil {
+		return err
+	}
+
+	data := []byte{}
+
+	// Write magic bytes
+	data = append(data, []byte("DIRC")...)
+
+	// Write version number
+	data = writeUintToBytes(uint32(i.Version), data)
+
+	// Write number of entries
+	data = writeUintToBytes(uint32(len(i.Entries)), data)
+
+	// Write the entries
+	idx := 0
+	for _, e := range i.Entries {
+		// Write ctime
+		ctimeUnix := uint(e.CTime.Unix())
+		data = writeUintToBytes(uint64(ctimeUnix), data)
+
+		// Write mtime
+		mtimeUnix := uint(e.MTime.Unix())
+		data = writeUintToBytes(uint64(mtimeUnix), data)
+
+		// Device + inode
+		data = writeUintToBytes(e.Dev, data)
+		data = writeUintToBytes(e.Inode, data)
+
+		// Mode
+		mode := (e.ModeType << 12) | ModeType(e.ModePerms)
+		data = writeUintToBytes(mode, data)
+
+		// UID, GID, Size
+		data = writeUintToBytes(e.UID, data)
+		data = writeUintToBytes(e.GID, data)
+		data = writeUintToBytes(e.Size, data)
+
+		// SHA
+		data = append(data, []byte(e.SHA)...)
+
+		// Name length and flags
+		flagAsssumeValid := uint16(0)
+		if e.FlagAssumeValid {
+			flagAsssumeValid = 0x1 << 15
+		}
+		nameLen := min(len(e.Name), 0xFF)
+		nameFlags := flagAsssumeValid | uint16(e.FlagStage) | uint16(nameLen)
+		data = writeUintToBytes(nameFlags, data)
+
+		// Name
+		data = append(data, []byte(e.Name)...)
+		data = append(data, 0x0)
+
+		// Padding
+		idx = 62 + len(e.Name) + 1
+		if idx%8 != 0 {
+			for range 8 - (idx % 8) {
+				data = append(data, 0x0)
+			}
+		}
+	}
+
+	os.WriteFile(filepath, data, os.ModePerm)
+	return nil
 }
 
 func parseIndex(index []byte) (*Index, error) {
@@ -60,9 +132,9 @@ func parseIndex(index []byte) (*Index, error) {
 		return nil, errors.New("invalid index signature")
 	}
 
-	version := enc.Uint16(header[4:8])
+	version := enc.Uint32(header[4:8])
 	if version != 2 {
-		return nil, errors.New("invalid index version: got only supports git index version 2")
+		return nil, errors.New("invalid index version: got only supports git index version 2; got " + strconv.Itoa(int(version)))
 	}
 
 	count := enc.Uint16(header[8:12])
@@ -161,4 +233,21 @@ func findNullByteIndex(arr []byte) int {
 	}
 
 	return -1
+}
+
+func writeUintToBytes[I ~uint16 | ~uint32 | ~uint64](num I, data []byte) []byte {
+	enc := binary.BigEndian
+
+	temp := []byte{}
+	switch any(num).(type) {
+	case uint16:
+		enc.PutUint16(temp, uint16(num))
+	case uint32:
+		enc.PutUint32(temp, uint32(num))
+	case uint64:
+		enc.PutUint64(temp, uint64(num))
+	}
+	data = append(data, temp...)
+
+	return data
 }

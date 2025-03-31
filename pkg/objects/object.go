@@ -59,7 +59,7 @@ func ReadObject(repo *repository.Repository, sha string) (GitObject, error) {
 	}
 
 	if !fs.IsFile(path) {
-		return nil, nil
+		return nil, errors.New("not a file: " + path)
 	}
 
 	f, err := os.Open(path)
