@@ -161,7 +161,11 @@ func (r *Repository) GetActiveBranch() (string, bool, error) {
 }
 
 func (r *Repository) WorkTree() string {
-	return r.worktree
+	sep := string(os.PathSeparator)
+	if strings.HasSuffix(r.worktree, sep) {
+		return r.worktree
+	}
+	return r.worktree + sep
 }
 
 func (r *Repository) GitDir() string {

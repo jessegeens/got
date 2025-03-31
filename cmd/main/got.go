@@ -19,6 +19,7 @@ var (
 		command.LsFilesCommand(),
 		command.LsTreeCommand(),
 		command.RevParseCommand(),
+		command.RmCommand(),
 		command.ShowRefCommand(),
 		command.StatusCommand(),
 		command.TagCommand(),
