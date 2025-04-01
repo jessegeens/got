@@ -10,6 +10,7 @@ import (
 
 var (
 	commands = []*command.Command{
+		command.AddCommand(),
 		command.CatFileCommand(),
 		command.CheckIgnoreCommand(),
 		command.CheckoutCommand(),
