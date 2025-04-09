@@ -238,7 +238,7 @@ func findNullByteIndex(arr []byte) int {
 func writeUintToBytes[I ~uint16 | ~uint32 | ~uint64](num I, data []byte) []byte {
 	enc := binary.BigEndian
 
-	temp := []byte{}
+	temp := make([]byte, 8)
 	switch any(num).(type) {
 	case uint16:
 		enc.PutUint16(temp, uint16(num))

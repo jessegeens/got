@@ -53,8 +53,9 @@ func statusBranch(repo *repository.Repository) error {
 		obj, err := objects.Find(repo, "HEAD", objects.TypeNoTypeSpecified, true)
 		if err != nil {
 			return err
+		} else {
+			fmt.Printf("HEAD detached at %s\n", obj)
 		}
-		fmt.Printf("HEAD detached at %s\n", obj)
 	}
 	return nil
 }
@@ -63,7 +64,8 @@ func statusBranch(repo *repository.Repository) error {
 func statusHeadIndex(repo *repository.Repository, idx *index.Index) error {
 	head, err := objects.MapFromTree(repo, "HEAD")
 	if err != nil {
-		return err
+		fmt.Printf("No commits yet\n")
+		//return err
 	}
 
 	for _, entry := range idx.Entries {
@@ -109,12 +111,16 @@ func statusIndexWorktree(repo *repository.Repository, idx *index.Index) error {
 		return err
 	}
 
-	fmt.Println("Changes not staged for commit:")
+	printed := false
 
 	// Now we traverse the index and compare real files with the cached versions
 	for _, entry := range idx.Entries {
 		fullPath := path.Join(repo.WorkTree(), entry.Name)
 		if !fs.Exists(fullPath) {
+			if !printed {
+				fmt.Println("\nChanges not staged for commit:")
+				printed = true
+			}
 			fmt.Printf("  deleted: %s\n", entry.Name)
 		} else {
 			finfo, err := os.Stat(fullPath)
@@ -134,6 +140,10 @@ func statusIndexWorktree(repo *repository.Repository, idx *index.Index) error {
 				}
 
 				if newSha != entry.SHA {
+					if !printed {
+						fmt.Println("\nChanges not staged for commit:")
+						printed = true
+					}
 					fmt.Printf("  modified: %s\n", entry.Name)
 				}
 			}
@@ -143,7 +153,7 @@ func statusIndexWorktree(repo *repository.Repository, idx *index.Index) error {
 
 	// Everything that's left in allFiles was not found in the index,
 	// so those files are not tracked
-	fmt.Println("Untracked files")
+	fmt.Println("\nUntracked files:")
 	for _, file := range allFiles {
 		if !ignore.ShouldBeIgnored(file) {
 			fmt.Printf("  %s\n", file)

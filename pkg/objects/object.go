@@ -62,7 +62,7 @@ func ReadObject(repo *repository.Repository, sha string) (GitObject, error) {
 		return nil, errors.New("not a file: " + path)
 	}
 
-	f, err := os.Open(path)
+	f, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
@@ -96,10 +96,21 @@ func ReadObject(repo *repository.Repository, sha string) (GitObject, error) {
 	// TODO(jgeens)
 	switch objType {
 	case "commit":
+		commit := &Commit{}
+		commit.Deserialize(rawObjectContents[idxSize+1:])
+		return commit, nil
 	case "tree":
+		tree := &Tree{}
+		tree.Deserialize(rawObjectContents[idxSize+1:])
+		return tree, nil
 	case "tag":
+		tag := &Tag{}
+		tag.Deserialize(rawObjectContents[idxSize+1:])
+		return tag, nil
 	case "blob":
-		return nil, nil
+		blob := &Blob{}
+		blob.Deserialize(rawObjectContents[idxSize+1:])
+		return blob, nil
 	}
 	return nil, errors.New("invalid object type " + objType)
 }
@@ -141,7 +152,11 @@ func WriteObject(o GitObject, repo *repository.Repository) (string, error) {
 	}
 
 	if !fs.PathExists(path) {
-		f, err := os.Open(path)
+		err := fs.WriteStringToFile(path, "")
+		if err != nil {
+			return "", err
+		}
+		f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 		if err != nil {
 			return "", err
 		}

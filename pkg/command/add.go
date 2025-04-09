@@ -2,6 +2,7 @@ package command
 
 import (
 	"errors"
+	"fmt"
 	iofs "io/fs"
 	"os"
 	"path/filepath"
@@ -69,18 +70,18 @@ func add(repo *repository.Repository, addPath string, delete bool) error {
 	}
 
 	for _, p := range paths {
-		relPath, err := filepath.Rel(repo.WorkTree(), addPath)
+		relPath, err := filepath.Rel(repo.WorkTree(), absPath)
 		if err != nil {
 			return err
 		}
 
 		fileContents, err := os.ReadFile(p)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to read %s: %s", p, err.Error())
 		}
 		sha, err := objects.ObjectHash(fileContents, objects.TypeBlob, repo)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to hash object: %s", err.Error())
 		}
 
 		var stat syscall.Stat_t

@@ -13,7 +13,7 @@ import (
 )
 
 func CheckoutCommand() *Command {
-	command := newCommand("cat-file")
+	command := newCommand("checkout")
 	command.Action = func(args []string) error {
 		commit := *flag.String("commit", "", "The commit or tree to checkout")
 		path := *flag.String("path", "", "The empty directory to checkout on")

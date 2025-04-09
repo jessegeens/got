@@ -29,7 +29,7 @@ func New(repositoryPath string, disableChecks bool) (*Repository, error) {
 
 		cfg, err := ini.Load(path.Join(gitdir, "config"))
 		if err != nil {
-			return nil, errors.New("failed to read repository configuration")
+			return nil, fmt.Errorf("failed to read repository configuration: %s", err.Error())
 		}
 		if cfg.Section("core").Key("repositoryformatversion").MustInt(0) != 0 {
 			return nil, errors.New("wrong repositoryformatversion")
@@ -176,10 +176,8 @@ func defaultRepositoryConfig() *ini.File {
 	cfg := ini.Empty()
 	cfg.NewSection("core")
 	cfg.Section("core").NewKey("repositoryformatversion", "0")
-	cfg.Section("core").NewBooleanKey("filemode")
-	cfg.Section("core").Key("filemode").SetValue("false")
-	cfg.Section("core").NewBooleanKey("bare")
-	cfg.Section("core").Key("bare").SetValue("false")
+	cfg.Section("core").NewKey("filemode", "true")
+	cfg.Section("core").NewKey("bare", "false")
 
 	return cfg
 }

@@ -4,7 +4,6 @@ import (
 	"strings"
 )
 
-// TODO(jgeens): make output bytearray instead of string
 func (kvlm *Kvlm) Serialize() string {
 	var serialized string
 
