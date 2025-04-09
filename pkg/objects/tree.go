@@ -7,10 +7,13 @@ import (
 	"fmt"
 	"maps"
 	"path"
+	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
 	"github.com/jessegeens/go-toolbox/pkg/fs"
+	"github.com/jessegeens/go-toolbox/pkg/index"
 	"github.com/jessegeens/go-toolbox/pkg/repository"
 )
 
@@ -166,5 +169,61 @@ func mapFromTree(repo *repository.Repository, treeRef string, pathPrefix string)
 	}
 
 	return ret, nil
+
+}
+
+func TreeFromIndex(repo *repository.Repository, idx *index.Index) (string, error) {
+	return treeFromIndex(repo, idx)
+}
+
+func treeFromIndex(repo *repository.Repository, idx *index.Index) (string, error) {
+	contents := make(map[string][]*index.Entry)
+	var err error
+
+	for _, e := range idx.Entries {
+		dirname := filepath.Dir(e.Name)
+		contents[dirname] = append(contents[dirname], e)
+	}
+
+	// We sort reversed by length, so that we always come across an element
+	// before we come across its parent (i.e. the longest elements come first in the list)
+	paths := slices.Collect(maps.Keys(contents))
+	sort.Slice(paths, func(i, j int) bool {
+		l1, l2 := len(paths[i]), len(paths[j])
+
+		if l1 != l2 {
+			return l1 > l2
+		}
+		return paths[i] > paths[j]
+	})
+
+	currentSha := ""
+	enc := binary.BigEndian
+
+	for _, p := range paths {
+		tree := Tree{
+			Items: []*TreeLeaf{},
+		}
+
+		for _, e := range contents[p] {
+			var modeBytes []byte
+			enc.PutUint16(modeBytes, uint16(index.ModeTypeRegular))
+			leaf := TreeLeaf{
+				Mode: modeBytes,
+				Sha:  []byte(e.SHA),
+				Path: []byte(filepath.Base(e.Name)),
+			}
+
+			tree.Items = append(tree.Items, &leaf)
+		}
+
+		currentSha, err = WriteObject(GitObject(&tree), repo)
+		if err != nil {
+			return "", err
+		}
+
+	}
+
+	return currentSha, nil
 
 }

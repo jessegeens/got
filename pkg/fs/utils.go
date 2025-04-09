@@ -80,7 +80,6 @@ func IsEmptyDirectory(path string) bool {
 	return err == io.EOF
 }
 
-// TODO(jgeens): implement
 func WriteStringToFile(path string, contents string) error {
-	return nil
+	return os.WriteFile(path, []byte(contents), os.ModePerm)
 }

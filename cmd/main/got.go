@@ -14,6 +14,7 @@ var (
 		command.CatFileCommand(),
 		command.CheckIgnoreCommand(),
 		command.CheckoutCommand(),
+		command.CommitCommand(),
 		command.HashObjectCommand(),
 		command.InitCommand(),
 		command.LogCommand(),

@@ -92,7 +92,7 @@ func statusIndexWorktree(repo *repository.Repository, idx *index.Index) error {
 	// We begin by walking the filesystem
 	gitDirPrefix := repo.GitDir() + string(os.PathSeparator)
 	allFiles := []string{}
-	err = filepath.WalkDir(repo.WorkTree(), func(path string, d iofs.DirEntry, err error) error {
+	err = filepath.WalkDir(repo.WorkTree(), func(path string, d iofs.DirEntry, e error) error {
 		// Skip whatever is in .git
 		if strings.HasPrefix(path, gitDirPrefix) {
 			return nil
