@@ -37,7 +37,10 @@ func CheckoutCommand() *Command {
 				return errors.New("Not empty: " + path)
 			}
 		} else if errors.Is(err, fs.ErrNotExist) {
-			os.MkdirAll(path, os.ModePerm)
+			err = os.MkdirAll(path, os.ModePerm)
+			if err != nil {
+				return err
+			}
 		} else {
 			return err
 		}

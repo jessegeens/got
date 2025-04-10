@@ -141,7 +141,7 @@ func parseIndex(index []byte) (*Index, error) {
 	content := header[12:]
 	idx := 0
 
-	for _ = range count {
+	for range count {
 		// TODO: bounds check on content
 		entry := &Entry{}
 

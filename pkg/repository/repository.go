@@ -56,7 +56,10 @@ func Create(repositoryPath string) (*Repository, error) {
 			return nil, errors.New("gitdir does not seem to be empty: " + repo.gitdir)
 		}
 	} else {
-		os.MkdirAll(repo.worktree, os.ModePerm)
+		err := os.MkdirAll(repo.worktree, os.ModePerm)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	repositorySubDirectories := [][]string{{"branches"}, {"objects"}, {"refs", "tags"}, {"refs", "heads"}}
@@ -135,8 +138,8 @@ func (r *Repository) RepositoryDir(create bool, paths ...string) (string, error)
 		}
 	} else { // path does not exist
 		if create {
-			os.MkdirAll(path, os.ModePerm)
-			return path, nil
+			err = os.MkdirAll(path, os.ModePerm)
+			return path, err
 		}
 		return "", errors.New("path does not exist and create = false")
 	}
