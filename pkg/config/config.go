@@ -13,13 +13,16 @@ type GitConfig struct {
 }
 
 func Read() (GitConfig, error) {
-	// TODO(jgeens): expand ~
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		return GitConfig{}, fmt.Errorf("failed to parse ~/.gitconfig: not able to read home directory: %s", err.Error())
+	}
+	gitConfigFileLocation := path.Join(homedir, ".gitconfig")
 	var cfg *ini.File
-	var err error
 	if val, ok := os.LookupEnv("XDG_CONFIG_HOME"); ok {
-		cfg, err = ini.Load("~/.gitconfig", path.Join(val, "/git/config"))
+		cfg, err = ini.Load(gitConfigFileLocation, path.Join(val, "/git/config"))
 	} else {
-		cfg, err = ini.Load("~/.gitconfig")
+		cfg, err = ini.Load(gitConfigFileLocation)
 	}
 	if err != nil {
 		return GitConfig{}, err

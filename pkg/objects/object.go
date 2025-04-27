@@ -79,38 +79,47 @@ func ReadObject(repo *repository.Repository, sha string) (GitObject, error) {
 	}
 
 	// Read object type
-	idxType := bytes.IndexByte(rawObjectContents, '\x00')
-	objType := string(rawObjectContents[0:idxType])
+	idx := bytes.IndexByte(rawObjectContents, ' ')
+	objType := string(rawObjectContents[0:idx])
 
 	// Read and validate obj size
-	idxSize := idxType + bytes.IndexByte(rawObjectContents[idxType:], '\x00')
-	size, err := strconv.Atoi(string(rawObjectContents[idxType:idxSize]))
+	// We advance the index by one to include the ' ' demarcator
+	idx += 1
+	rawObjectContents = rawObjectContents[idx:]
+
+	idx = bytes.IndexByte(rawObjectContents, '\x00')
+	stringLen := string(rawObjectContents[0:idx])
+	size, err := strconv.Atoi(stringLen)
 	if err != nil {
-		return nil, errors.New("invalid object size " + string(rawObjectContents[idxType:idxSize]))
+		return nil, errors.New("invalid object size " + stringLen)
 	}
 
-	if size != len(rawObjectContents)-idxSize-1 {
+	// Now we pass over the size itself and go to the actual contents
+	idx += 1
+	rawObjectContents = rawObjectContents[idx:]
+
+	// We verify the size
+	if size != len(rawObjectContents) {
 		return nil, errors.New("malformed object " + sha + ", bad length")
 	}
 
-	// TODO(jgeens)
 	switch objType {
 	case "commit":
 		commit := &Commit{}
-		commit.Deserialize(rawObjectContents[idxSize+1:])
-		return commit, nil
+		err := commit.Deserialize(rawObjectContents)
+		return commit, err
 	case "tree":
 		tree := &Tree{}
-		tree.Deserialize(rawObjectContents[idxSize+1:])
-		return tree, nil
+		err := tree.Deserialize(rawObjectContents)
+		return tree, err
 	case "tag":
 		tag := &Tag{}
-		tag.Deserialize(rawObjectContents[idxSize+1:])
-		return tag, nil
+		err := tag.Deserialize(rawObjectContents)
+		return tag, err
 	case "blob":
 		blob := &Blob{}
-		blob.Deserialize(rawObjectContents[idxSize+1:])
-		return blob, nil
+		err := blob.Deserialize(rawObjectContents)
+		return blob, err
 	}
 	return nil, errors.New("invalid object type " + objType)
 }
@@ -206,7 +215,7 @@ func Find(repo *repository.Repository, name string, format GitObjectType, follow
 			return "", err
 		}
 
-		if obj.Type() == format {
+		if obj.Type() == format || format == TypeNoTypeSpecified {
 			return sha, nil
 		}
 

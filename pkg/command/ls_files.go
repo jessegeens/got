@@ -13,7 +13,7 @@ import (
 func LsFilesCommand() *Command {
 	command := newCommand("ls-files")
 	command.Action = func(args []string) error {
-		verbose := *flag.Bool("verbose", false, "Show everything")
+		verbose := *flag.Bool("verbose", true, "Show everything")
 		repo, err := repository.Find(".")
 		if err != nil {
 			return err

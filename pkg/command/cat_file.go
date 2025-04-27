@@ -1,6 +1,7 @@
 package command
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/jessegeens/go-toolbox/pkg/objects"
@@ -10,6 +11,9 @@ import (
 func CatFileCommand() *Command {
 	command := newCommand("cat-file")
 	command.Action = func(args []string) error {
+		if len(args) < 1 {
+			return errors.New("must provide object hash as an argument")
+		}
 		objHash := args[0]
 		repo, err := repository.Find(".")
 		if err != nil {
