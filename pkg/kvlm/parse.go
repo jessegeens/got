@@ -13,8 +13,8 @@ func Parse(raw []byte, start int, msg *Kvlm) error {
 	// where we are: at a keyword, or already in the MessageQ
 
 	// We search for the next space and new line
-	spaceIndex := find(raw, ' ', start)
-	newlineIndex := find(raw, '\n', start)
+	spaceIndex := find(raw, ' ', start) + start
+	newlineIndex := find(raw, '\n', start) + start
 
 	// If a space appears before a new line, we have a keyword. Otherwise,
 	// it's the final Message, which we just read to the end of the file
@@ -41,11 +41,13 @@ func Parse(raw []byte, start int, msg *Kvlm) error {
 	// by a space (because values can be multi-line)
 	end := start
 	for {
-		end = find(raw, '\n', end+1)
-		if end >= len(raw) || raw[end+1] == ' ' {
+		end += find(raw, '\n', end+1)
+		if end >= len(raw) || raw[end+1] != ' ' {
 			break
 		}
 	}
+
+	end += 1
 
 	// Then we can get the value
 	val := raw[spaceIndex+1 : end]

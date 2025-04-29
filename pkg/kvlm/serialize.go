@@ -14,5 +14,7 @@ func (kvlm *Kvlm) Serialize() string {
 		serialized = serialized + line
 	}
 
+	serialized = serialized + "\n" + string(kvlm.Message)
+
 	return serialized
 }

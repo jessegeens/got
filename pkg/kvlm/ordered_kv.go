@@ -17,11 +17,13 @@ func (okv *OrderedKV) Get(key string) ([]byte, bool) {
 	return val, ok
 }
 
+// If key does not exist yet, we set okv[key] = val
+// else, we set okv[key] = [okv[key], val]
 func (okv *OrderedKV) Set(key string, val []byte) {
 	if value, ok := okv.kv[key]; ok {
 		okv.kv[key] = append(value, val...)
 	} else {
-		okv.kv[key] = value
+		okv.kv[key] = val
 		okv.keys = append(okv.keys, key)
 	}
 }
