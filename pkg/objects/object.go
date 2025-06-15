@@ -87,7 +87,7 @@ func ReadObject(repo *repository.Repository, sha string) (GitObject, error) {
 	idx += 1
 	rawObjectContents = rawObjectContents[idx:]
 
-	idx = bytes.IndexByte(rawObjectContents, '\x00')
+	idx = bytes.IndexByte(rawObjectContents, 0x00)
 	stringLen := string(rawObjectContents[0:idx])
 	size, err := strconv.Atoi(stringLen)
 	if err != nil {
@@ -132,30 +132,39 @@ func Encode(o GitObject) ([]byte, error) {
 	}
 
 	header := []byte(string(o.Type()) + " " + strconv.Itoa(len(data)))
-	encoded := append(append(header, '\x00'), data...)
+	encoded := append(append(header, 0x00), data...)
 	return encoded, nil
 }
 
-func CalculateSha(o GitObject) (string, error) {
-	encoded, err := Encode(o)
+func CalculateHexSha(o GitObject) (string, error) {
+	binaryHash, err := CalculateBinarySHA(o)
 	if err != nil {
 		return "", err
+	}
+
+	return hex.EncodeToString(binaryHash), nil
+}
+
+func CalculateBinarySHA(o GitObject) ([]byte, error) {
+	encoded, err := Encode(o)
+	if err != nil {
+		return nil, err
 	}
 
 	hasher := sha1.New()
 	hasher.Write(encoded)
 	hash := hasher.Sum(nil)
 
-	return hex.EncodeToString(hash), nil
+	return hash, nil
 }
 
 func WriteObject(o GitObject, repo *repository.Repository) (string, error) {
-	hash, err := CalculateSha(o)
+	hexHash, err := CalculateHexSha(o)
 	if err != nil {
 		return "", err
 	}
 
-	path, err := repo.RepositoryFile(true, "objects", hash[0:2], hash[2:])
+	path, err := repo.RepositoryFile(true, "objects", hexHash[0:2], hexHash[2:])
 	if err != nil {
 		return "", err
 	}
@@ -179,12 +188,16 @@ func WriteObject(o GitObject, repo *repository.Repository) (string, error) {
 		zlibWriter := zlib.NewWriter(f)
 		_, err = zlibWriter.Write(encodedObject)
 		if err != nil {
+			zlibWriter.Close()
 			return "", err
 		}
-
+		err = zlibWriter.Close()
+		if err != nil {
+			return "", err
+		}
 	}
 
-	return hash, nil
+	return hexHash, nil
 }
 
 // Find finds an object called `name` in a repository `repo`.

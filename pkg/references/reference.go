@@ -2,7 +2,6 @@ package references
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -25,7 +24,8 @@ func (r Reference) Resolve(repo *repository.Repository) (string, error) {
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return "", fmt.Errorf("failed to resolve reference %s: %w", r.String(), err)
+		//return "", fmt.Errorf("failed to resolve reference %s: %w", r.String(), err)
+		return "", nil
 	}
 	if bytes.HasPrefix(data, []byte("ref: ")) {
 		// We trim the "ref: " and the final "\n"

@@ -48,6 +48,9 @@ func (t *Tree) Serialize() ([]byte, error) {
 
 	data := []byte{}
 	for _, leaf := range t.Items {
+		if len(leaf.Sha) != 20 {
+			return nil, errors.New("tree leaf got hex sha instead of binary sha")
+		}
 		data = append(data, leaf.Mode...)
 		data = append(data, ' ')
 		data = append(data, leaf.Path...)

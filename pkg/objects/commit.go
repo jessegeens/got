@@ -7,12 +7,17 @@ type Commit struct {
 }
 
 func (c *Commit) Serialize() ([]byte, error) {
+	if c.data == nil {
+		return []byte{}, nil
+	}
 	return []byte(c.data.Serialize()), nil
 }
 
 func (c *Commit) Deserialize(data []byte) error {
-	kvlm.Parse(data, 0, c.data)
-	return nil
+	if c.data == nil {
+		c.data = kvlm.New()
+	}
+	return kvlm.Parse(data, 0, c.data)
 }
 
 func (c *Commit) Type() GitObjectType {

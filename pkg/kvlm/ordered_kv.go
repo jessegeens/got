@@ -7,6 +7,13 @@ type OrderedKV struct {
 	keys []string
 }
 
+func NewOrderedKV() OrderedKV {
+	return OrderedKV{
+		kv:   map[string][]byte{},
+		keys: make([]string, 0),
+	}
+}
+
 func (okv *OrderedKV) Has(key string) bool {
 	_, ok := okv.kv[key]
 	return ok

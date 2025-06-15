@@ -4,15 +4,17 @@ import "github.com/jessegeens/go-toolbox/pkg/kvlm"
 
 type Tag Commit
 
-// A bit sad that Go does not support inheritance here, so we have to re-declare all methods...
+// Go does not support inheritance, so we have to re-declare all methods...
 
 func (t *Tag) Serialize() ([]byte, error) {
 	return []byte(t.data.Serialize()), nil
 }
 
 func (t *Tag) Deserialize(data []byte) error {
-	kvlm.Parse(data, 0, t.data)
-	return nil
+	if t.data == nil {
+		t.data = kvlm.New()
+	}
+	return kvlm.Parse(data, 0, t.data)
 }
 
 func (t *Tag) Type() GitObjectType {

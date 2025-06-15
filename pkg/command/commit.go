@@ -89,7 +89,7 @@ func commit(repo *repository.Repository, message string) (string, error) {
 }
 
 func createCommit(repo *repository.Repository, tree, parent, author, message string, timestamp time.Time) (string, error) {
-	data := &kvlm.Kvlm{}
+	data := kvlm.New()
 
 	data.Okv.Set("tree", []byte(tree))
 

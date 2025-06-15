@@ -48,7 +48,7 @@ func tagCreate(repo *repository.Repository, name, ref string, createTagObject bo
 
 	if createTagObject {
 
-		tagData := &kvlm.Kvlm{}
+		tagData := kvlm.New()
 		tagData.Okv.Set("object", []byte(sha))
 		tagData.Okv.Set("type", []byte("commit"))
 		tagData.Okv.Set("name", []byte(name))
