@@ -298,11 +298,8 @@ func TestFind(t *testing.T) {
 	if err != nil {
 		t.FailNow()
 	}
-	treeFromIdxHash, err := hex.DecodeString(treeFromIdx)
-	if err != nil || string(treeFromIdxHash) == "" {
-		t.Fatalf("Failed to get tree hash from index: %v", err)
-	}
-	data.Okv.Set("tree", treeFromIdxHash)
+
+	data.Okv.Set("tree", []byte(treeFromIdx))
 	data.Message = []byte("my commit message")
 	data.Okv.Set("author", []byte("jesse"))
 	data.Okv.Set("committer", []byte("jesse"))

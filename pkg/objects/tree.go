@@ -218,7 +218,7 @@ func treeFromIndex(repo *repository.Repository, idx *index.Index) (string, error
 		}
 
 		for _, e := range contents[p] {
-			var modeBytes []byte
+			modeBytes := make([]byte, 2)
 			enc.PutUint16(modeBytes, uint16(index.ModeTypeRegular))
 			leaf := TreeLeaf{
 				Mode: modeBytes,
