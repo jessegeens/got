@@ -271,7 +271,7 @@ func TestFind(t *testing.T) {
 		MTime:           time.Now(),
 		Dev:             uint32(123),
 		Inode:           uint32(456),
-		SHA:             string(blobHexHash),
+		SHA:             string(blobHash),
 		ModeType:        index.ModeTypeRegular,
 		ModePerms:       0o644,
 		UID:             0,

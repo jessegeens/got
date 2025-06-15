@@ -19,13 +19,14 @@ type Entry struct {
 	// Modification Time
 	MTime time.Time
 	// ID of Device containing this file
-	Dev             uint32
-	Inode           uint32
-	ModeType        ModeType
-	ModePerms       uint16
-	UID             uint32
-	GID             uint32
-	Size            uint32
+	Dev       uint32
+	Inode     uint32
+	ModeType  ModeType
+	ModePerms uint16
+	UID       uint32
+	GID       uint32
+	Size      uint32
+	// Should be of length 20
 	SHA             string
 	FlagAssumeValid bool
 	FlagStage       uint16

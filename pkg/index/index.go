@@ -3,7 +3,6 @@ package index
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"math"
@@ -79,9 +78,12 @@ func (i *Index) Write(repo *repository.Repository) error {
 		data = writeUintToBytes(e.Dev, data)
 		data = writeUintToBytes(e.Inode, data)
 
+		// Next two bytes are unused, so we write two nullbytes
+		data = append(data, []byte{0x00, 0x00}...)
+
 		// Mode
 		mode := (e.ModeType << 12) | ModeType(e.ModePerms)
-		data = writeUintToBytes(mode, data)
+		data = writeUintToBytes(uint16(mode), data)
 
 		// UID, GID, Size
 		data = writeUintToBytes(e.UID, data)
@@ -89,6 +91,9 @@ func (i *Index) Write(repo *repository.Repository) error {
 		data = writeUintToBytes(e.Size, data)
 
 		// SHA
+		if len([]byte(e.SHA)) != 20 {
+			return fmt.Errorf("failed to write index: invalid sha length: %d", len([]byte(e.SHA)))
+		}
 		data = append(data, []byte(e.SHA)...)
 
 		// Name length and flags
@@ -96,8 +101,10 @@ func (i *Index) Write(repo *repository.Repository) error {
 		if e.FlagAssumeValid {
 			flagAsssumeValid = 0x1 << 15
 		}
+		// 0011 0000 0000 0000 = 12288
+		flagStage := e.FlagStage & uint16(12288)
 		nameLen := min(len(e.Name), 0xFF)
-		nameFlags := flagAsssumeValid | uint16(e.FlagStage) | uint16(nameLen)
+		nameFlags := flagAsssumeValid | flagStage | uint16(nameLen)
 		data = writeUintToBytes(nameFlags, data)
 
 		// Name
@@ -138,10 +145,13 @@ func parseIndex(index []byte) (*Index, error) {
 	}
 
 	count := enc.Uint32(header[8:12])
-	content := header[12:]
+	content := index[12:]
 	idx := 0
 
 	for range count {
+		if len(content) < idx+62 {
+			break
+		}
 		// TODO: bounds check on content
 		entry := &Entry{}
 
@@ -179,8 +189,7 @@ func parseIndex(index []byte) (*Index, error) {
 
 		// Parse SHA
 		sha := content[idx+40 : idx+60]
-		// TODO: check that this actually works
-		entry.SHA = hex.EncodeToString(sha)
+		entry.SHA = string(sha) //hex.EncodeToString(sha)
 
 		// Parse flags
 		flags := enc.Uint16(content[idx+60 : idx+62])
@@ -200,8 +209,8 @@ func parseIndex(index []byte) (*Index, error) {
 		idx += 62
 
 		// We read the name
-		if nameLength < 0xFFF {
-			if content[idx+int(nameLength)] != 0 {
+		if nameLength < 0xFF {
+			if len(content) < idx+int(nameLength) || content[idx+int(nameLength)] != 0 {
 				return nil, errors.New("invalid name length in index")
 			}
 			entry.Name = string(content[idx : idx+int(nameLength)])
@@ -210,7 +219,7 @@ func parseIndex(index []byte) (*Index, error) {
 			// If the name is too long, we find the first occurence as a null byte as the demarcator
 			len := findNullByteIndex(content[idx:])
 			if len < 0 {
-				return nil, errors.New("ivalid name in index")
+				return nil, errors.New("invalid name in index")
 			}
 			entry.Name = string(content[idx : idx+len])
 			idx += len + 1
@@ -235,7 +244,7 @@ func findNullByteIndex(arr []byte) int {
 	return -1
 }
 
-func writeUintToBytes[I ~uint16 | ~uint32 | ~uint64](num I, data []byte) []byte {
+func writeUintToBytes[I uint16 | uint32 | uint64](num I, data []byte) []byte {
 	enc := binary.BigEndian
 
 	switch any(num).(type) {
@@ -247,7 +256,6 @@ func writeUintToBytes[I ~uint16 | ~uint32 | ~uint64](num I, data []byte) []byte 
 		temp := make([]byte, 4)
 		enc.PutUint32(temp, uint32(num))
 		data = append(data, temp...)
-
 	case uint64:
 		temp := make([]byte, 8)
 		enc.PutUint64(temp, uint64(num))
