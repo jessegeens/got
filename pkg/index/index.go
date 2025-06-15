@@ -137,7 +137,7 @@ func parseIndex(index []byte) (*Index, error) {
 		return nil, errors.New("invalid index version: got only supports git index version 2; got " + strconv.Itoa(int(version)))
 	}
 
-	count := enc.Uint16(header[8:12])
+	count := enc.Uint32(header[8:12])
 	content := header[12:]
 	idx := 0
 
@@ -238,16 +238,21 @@ func findNullByteIndex(arr []byte) int {
 func writeUintToBytes[I ~uint16 | ~uint32 | ~uint64](num I, data []byte) []byte {
 	enc := binary.BigEndian
 
-	temp := make([]byte, 8)
 	switch any(num).(type) {
 	case uint16:
+		temp := make([]byte, 2)
 		enc.PutUint16(temp, uint16(num))
+		data = append(data, temp...)
 	case uint32:
+		temp := make([]byte, 4)
 		enc.PutUint32(temp, uint32(num))
+		data = append(data, temp...)
+
 	case uint64:
+		temp := make([]byte, 8)
 		enc.PutUint64(temp, uint64(num))
+		data = append(data, temp...)
 	}
-	data = append(data, temp...)
 
 	return data
 }

@@ -244,9 +244,9 @@ func Find(repo *repository.Repository, name string, format GitObjectType, follow
 			}
 			sha = string(objSha)
 		} else if obj.Type() == TypeCommit && format == TypeTree {
-			tag := obj.(*Commit)
-			objSha, ok := tag.GetValue("tree")
-			if !ok {
+			commit := obj.(*Commit)
+			objSha, ok := commit.GetValue("tree")
+			if !ok || len(objSha) == 0 {
 				return "", errors.New("failed to parse commit")
 			}
 			sha = string(objSha)

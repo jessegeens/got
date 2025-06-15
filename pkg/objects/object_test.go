@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/jessegeens/go-toolbox/pkg/index"
 	"github.com/jessegeens/go-toolbox/pkg/kvlm"
@@ -244,7 +245,7 @@ func TestFind(t *testing.T) {
 		t.Fatalf("Failed to decode hash: %v", err)
 	}
 
-	// Create and write a test tree that points to our blob
+	//Create and write a test tree that points to our blob
 	tree := &Tree{
 		Items: []*TreeLeaf{
 			{
@@ -259,10 +260,37 @@ func TestFind(t *testing.T) {
 		t.Fatalf("Failed to write test tree: %v", err)
 	}
 
+	// Now we write this to the index (a la `git add`)
+	idx, err := index.Read(repo)
+	if err != nil {
+		t.FailNow()
+	}
+
+	entry := &index.Entry{
+		CTime:           time.Now(),
+		MTime:           time.Now(),
+		Dev:             uint32(123),
+		Inode:           uint32(456),
+		SHA:             string(blobHexHash),
+		ModeType:        index.ModeTypeRegular,
+		ModePerms:       0o644,
+		UID:             0,
+		GID:             0,
+		Size:            uint32(0),
+		FlagAssumeValid: false,
+		FlagStage:       0,
+		Name:            "test.txt",
+	}
+	idx.Entries = append(idx.Entries, entry)
+	err = idx.Write(repo)
+	if err != nil {
+		t.Fatalf("Failed to write index: %v", err)
+	}
+
 	// Create and write a test commit that points to our tree
 	data := kvlm.New()
 
-	idx, err := index.Read(repo)
+	idx, err = index.Read(repo)
 	if err != nil {
 		t.FailNow()
 	}
@@ -271,6 +299,9 @@ func TestFind(t *testing.T) {
 		t.FailNow()
 	}
 	treeFromIdxHash, err := hex.DecodeString(treeFromIdx)
+	if err != nil || string(treeFromIdxHash) == "" {
+		t.Fatalf("Failed to get tree hash from index: %v", err)
+	}
 	data.Okv.Set("tree", treeFromIdxHash)
 	data.Message = []byte("my commit message")
 	data.Okv.Set("author", []byte("jesse"))
