@@ -46,7 +46,7 @@ func parents(path string, prts []string) []string {
 
 func PathExists(path string) bool {
 	_, err := os.Stat(path)
-	return os.IsExist(err)
+	return err == nil || os.IsExist(err)
 }
 
 func IsDirectory(path string) bool {

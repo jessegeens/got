@@ -47,11 +47,17 @@ func TestPathExists(t *testing.T) {
 	}
 	defer os.Remove(tmpFile.Name())
 
-	if PathExists(tmpFile.Name()) {
-		t.Errorf("PathExists should return false for existing file (bug in implementation)")
+	if !PathExists(tmpFile.Name()) {
+		t.Errorf("PathExists should return true for existing file")
 	}
 	if PathExists("nonexistent_file_12345") {
 		t.Errorf("PathExists should return false for non-existing file")
+	}
+
+	tmpDir := t.TempDir()
+	defer os.Remove(tmpDir)
+	if !PathExists(tmpDir) {
+		t.Errorf("PathExists should return true for existing directory")
 	}
 }
 
@@ -91,7 +97,7 @@ func TestIsEmptyDirectory(t *testing.T) {
 		t.Errorf("IsEmptyDirectory should return true for empty directory")
 	}
 	// Create a file in the directory
-	f, err := os.Create(filepath.Join(tmpDir, "file"))
+	f, err := os.Create(filepath.Join(tmpDir, ".file"))
 	if err != nil {
 		t.Fatal(err)
 	}
