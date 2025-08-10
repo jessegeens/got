@@ -21,7 +21,7 @@ func Parse(raw []byte, start int, msg *Kvlm) error {
 
 	// We search for the next space and new line
 	spaceIndex := find(raw, ' ', start)
-	newlineIndex := find(raw, '\n', start) + start
+	newlineIndex := find(raw, '\n', start)
 
 	// If a space appears before a new line, we have a keyword. Otherwise,
 	// it's the final Message, which we just read to the end of the file
@@ -35,9 +35,8 @@ func Parse(raw []byte, start int, msg *Kvlm) error {
 		msg.Message = raw[start+1:]
 		return nil
 	}
-
 	spaceIndex += start
-	newlineIndex += start
+
 	// Recursive case
 	// ==============
 	// We read a key-value pair and recurse for the next

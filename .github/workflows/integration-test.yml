@@ -1,0 +1,22 @@
+name: integration-test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test-integration:
+    name: test-integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'  # Set to your desired Go version
+
+      - name: Run integration tests
+        run: go test -v ./pkg/integration_test.go
