@@ -2,6 +2,7 @@ package command
 
 import (
 	"flag"
+	"fmt"
 	"path"
 	"strings"
 	"time"
@@ -73,7 +74,7 @@ func commit(repo *repository.Repository, message string) (string, error) {
 			return commit, err
 		}
 
-		err = fs.WriteStringToFile(file, "\n")
+		err = fs.WriteStringToFile(file, fmt.Sprintf("%s\n", commit))
 		return commit, err
 	}
 

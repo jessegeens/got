@@ -83,3 +83,12 @@ func IsEmptyDirectory(path string) bool {
 func WriteStringToFile(path string, contents string) error {
 	return os.WriteFile(path, []byte(contents), os.ModePerm)
 }
+
+func ReadContents(path string) (string, error) {
+	contentsBytes, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	contents := strings.TrimSpace(string(contentsBytes))
+	return strings.TrimSuffix(contents, "\n"), nil
+}

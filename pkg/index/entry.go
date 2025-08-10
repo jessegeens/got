@@ -26,7 +26,8 @@ type Entry struct {
 	UID       uint32
 	GID       uint32
 	Size      uint32
-	// Should be of length 20
+	// SHA in hex format
+	// Should thus be a string of length 40
 	SHA             string
 	FlagAssumeValid bool
 	FlagStage       uint16

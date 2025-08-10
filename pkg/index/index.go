@@ -3,6 +3,7 @@ package index
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/jessegeens/go-toolbox/pkg/fs"
+	//"github.com/jessegeens/go-toolbox/pkg/objects"
 	"github.com/jessegeens/go-toolbox/pkg/repository"
 )
 
@@ -91,10 +93,14 @@ func (i *Index) Write(repo *repository.Repository) error {
 		data = writeUintToBytes(e.Size, data)
 
 		// SHA
-		if len([]byte(e.SHA)) != 20 {
-			return fmt.Errorf("failed to write index: invalid sha length: %d", len([]byte(e.SHA)))
+		sha, err := hex.DecodeString(e.SHA)
+		if err != nil {
+			return fmt.Errorf("failed to write index: invalid sha: %s", err.Error())
 		}
-		data = append(data, []byte(e.SHA)...)
+		if len(sha) != 20 {
+			return fmt.Errorf("failed to write index: invalid sha length: %d", len(sha))
+		}
+		data = append(data, sha...)
 
 		// Name length and flags
 		flagAsssumeValid := uint16(0)
@@ -189,7 +195,7 @@ func parseIndex(index []byte) (*Index, error) {
 
 		// Parse SHA
 		sha := content[idx+40 : idx+60]
-		entry.SHA = string(sha) //hex.EncodeToString(sha)
+		entry.SHA = hex.EncodeToString(sha)
 
 		// Parse flags
 		flags := enc.Uint16(content[idx+60 : idx+62])

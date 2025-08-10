@@ -84,7 +84,7 @@ func TestGitWorkflow(t *testing.T) {
 	t.Run("create and add file", func(t *testing.T) {
 		// Create a test file
 		testFile := "test.txt"
-		testContent := "Hello, World!\nThis is a test file for our Git implementation."
+		testContent := "Hello, World!\nThis is a test file for got."
 
 		err := os.WriteFile(testFile, []byte(testContent), 0644)
 		if err != nil {
@@ -178,8 +178,7 @@ func TestGitWorkflow(t *testing.T) {
 		}
 
 		// Read the master branch reference
-		masterPath := filepath.Join(repo.GitDir(), "refs", "heads", "master")
-		masterContent, err := os.ReadFile(masterPath)
+		masterContent, err := repo.GetBranchCommit("master")
 		if err != nil {
 			t.Fatalf("Failed to read master branch: %v", err)
 		}

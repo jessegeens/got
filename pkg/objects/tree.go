@@ -3,6 +3,7 @@ package objects
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"maps"
@@ -48,14 +49,20 @@ func (t *Tree) Serialize() ([]byte, error) {
 
 	data := []byte{}
 	for _, leaf := range t.Items {
-		if len(leaf.Sha) != 20 {
-			return nil, errors.New("tree leaf got hex sha instead of binary sha")
+		if len(leaf.Sha) != 40 {
+			return nil, errors.New("tree leaf got binary sha instead of hex sha")
 		}
+
+		binarySha, err := hex.DecodeString(string(leaf.Sha))
+		if err != nil {
+			return nil, errors.New("tree leaf got invalid hex sha: " + err.Error())
+		}
+
 		data = append(data, leaf.Mode...)
 		data = append(data, ' ')
 		data = append(data, leaf.Path...)
 		data = append(data, 0x00)
-		data = append(data, leaf.Sha...)
+		data = append(data, binarySha...)
 	}
 	return data, nil
 }

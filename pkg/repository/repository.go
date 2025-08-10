@@ -158,9 +158,30 @@ func (r *Repository) GetActiveBranch() (string, bool, error) {
 	}
 
 	if strings.HasPrefix(string(head), "ref: refs/heads/") {
-		return string(head[16:]), true, nil
+		branch := strings.TrimPrefix(string(head), "ref: refs/heads/")
+		branch = strings.TrimSuffix(branch, "\n")
+		branch = strings.TrimSpace(branch)
+		return branch, true, nil
 	}
 	return "", false, nil
+}
+
+// Returns the commit hash the branch currently points to
+func (r *Repository) GetBranchCommit(branch string) (string, error) {
+	branchPath := path.Join("refs/heads", branch)
+	headFile, err := r.RepositoryFile(false, branchPath)
+	if err != nil {
+		return "", err
+	}
+	commitBytes, err := os.ReadFile(headFile)
+	if err != nil {
+		return "", err
+	}
+
+	commit := strings.TrimSuffix(string(commitBytes), "\n")
+	commit = strings.TrimSpace(commit)
+	return commit, nil
+
 }
 
 func (r *Repository) WorkTree() string {

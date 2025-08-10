@@ -215,7 +215,7 @@ func Find(repo *repository.Repository, name string, format GitObjectType, follow
 		return "", errors.New("cannot find object ambiguous name: found " + strconv.Itoa(len(shas)) + " possible objects!")
 	}
 
-	if len(shas) == 0 {
+	if len(shas) == 0 || shas[0] == "" {
 		return "", errors.New("did not find any match for object named " + name)
 	}
 
