@@ -31,6 +31,9 @@ func Read() (GitConfig, error) {
 }
 
 func (c *GitConfig) GetUser() (string, bool) {
+	if c.data == nil {
+		return "", false
+	}
 	userSection := c.data.Section("user")
 	if userSection == nil {
 		return "", false
