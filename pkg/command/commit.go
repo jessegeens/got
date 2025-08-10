@@ -33,10 +33,8 @@ func CommitCommand() *Command {
 }
 
 func commit(repo *repository.Repository, message string) (string, error) {
-	cfg, err := config.Read()
-	if err != nil {
-		return "", err
-	}
+	// We ignore errors on purpose, because the user may not have a gitconfig file
+	cfg, _ := config.Read()
 
 	idx, err := index.Read(repo)
 	if err != nil {
