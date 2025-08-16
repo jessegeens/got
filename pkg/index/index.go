@@ -69,15 +69,15 @@ func (i *Index) Write(repo *repository.Repository) error {
 	// Write the entries
 	idx := 0
 	for _, e := range i.Entries {
-		// Write ctime
+		// Write ctime; 8 bytes
 		ctimeUnix := uint(e.CTime.Unix())
 		data = writeUintToBytes(uint64(ctimeUnix), data)
 
-		// Write mtime
+		// Write mtime; 8 bytes
 		mtimeUnix := uint(e.MTime.Unix())
 		data = writeUintToBytes(uint64(mtimeUnix), data)
 
-		// Device + inode
+		// Device + inode (8 bytes)
 		data = writeUintToBytes(e.Dev, data)
 		data = writeUintToBytes(e.Inode, data)
 
@@ -88,7 +88,7 @@ func (i *Index) Write(repo *repository.Repository) error {
 		mode := (e.ModeType << 12) | ModeType(e.ModePerms)
 		data = writeUintToBytes(uint16(mode), data)
 
-		// UID, GID, Size
+		// UID, GID, Size (12 bytes)
 		data = writeUintToBytes(e.UID, data)
 		data = writeUintToBytes(e.GID, data)
 		data = writeUintToBytes(e.Size, data)
@@ -155,13 +155,13 @@ func parseIndex(index []byte) (*Index, error) {
 		// TODO: bounds check on content
 		entry := &Entry{}
 
-		// Read creation time seconds as unix timestamp
+		// Read creation time seconds as unix timestamp (8bytes total)
 		ctimeSec := enc.Uint32(content[idx : idx+4])
 		// Read creation time nanoseconds
 		ctimeNano := enc.Uint32(content[idx+4 : idx+8])
 		entry.CTime = time.Unix(int64(ctimeSec), int64(ctimeNano))
 
-		// Same for modification time
+		// Same for modification time (8bytes total)
 		mtimeSec := enc.Uint32(content[idx+8 : idx+12])
 		// Read creation time nanoseconds
 		mtimeNano := enc.Uint32(content[idx+12 : idx+16])
@@ -173,7 +173,7 @@ func parseIndex(index []byte) (*Index, error) {
 
 		// The next two bytes are unused, so we ignore them
 
-		// Read mode type and permissions
+		// Read mode type and permissions (2 bytes)
 		mode := enc.Uint16(content[idx+26 : idx+28])
 		modeType := mode >> 12
 		if !isValidModeType(modeType) {
@@ -183,6 +183,7 @@ func parseIndex(index []byte) (*Index, error) {
 		entry.ModeType = ModeType(modeType)
 		entry.ModePerms = modePerms
 
+		// UID, GID, Size: 4 bytes each (12 total)
 		entry.UID = enc.Uint32(content[idx+28 : idx+32])
 		entry.GID = enc.Uint32(content[idx+32 : idx+36])
 		entry.Size = enc.Uint32(content[idx+36 : idx+40])

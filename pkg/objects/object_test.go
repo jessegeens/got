@@ -438,7 +438,7 @@ func TestWriteObject(t *testing.T) {
 			t.Errorf("Tree item path = %q, want %q", tree.Items[0].Path, "test.txt")
 		}
 		if tree.Items[0].Sha != blobHash {
-			t.Errorf("Tree item sha = %q, want %q", tree.Items[0].Sha, blobHash)
+			t.Errorf("Tree item sha = %q, want %q", tree.Items[0].Sha.AsString(), blobHash.AsString())
 		}
 	})
 

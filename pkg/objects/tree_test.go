@@ -191,7 +191,7 @@ func TestTree_SerializeDeserialize(t *testing.T) {
 			t.Errorf("Item %d Path = %s, want %s", i, got.Path, original.Path)
 		}
 		if original.Sha.AsString() != got.Sha.AsString() {
-			t.Errorf("Item %d SHA = %x, want %x", i, got.Sha, original.Sha)
+			t.Errorf("Item %d SHA = %x, want %x", i, got.Sha.AsString(), original.Sha.AsString())
 		}
 	}
 }
