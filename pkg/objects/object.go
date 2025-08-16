@@ -147,28 +147,6 @@ func CalculateSha(o GitObject) (*hashing.SHA, error) {
 	return hash, nil
 }
 
-// func CalculateHexSha(o GitObject) (string, error) {
-// 	binaryHash, err := CalculateBinarySHA(o)
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	return hex.EncodeToString(binaryHash), nil
-// }
-
-// func CalculateBinarySHA(o GitObject) ([]byte, error) {
-// 	encoded, err := Encode(o)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	hasher := sha1.New()
-// 	hasher.Write(encoded)
-// 	hash := hasher.Sum(nil)
-
-// 	return hash, nil
-// }
-
 func WriteObject(o GitObject, repo *repository.Repository) (*hashing.SHA, error) {
 	hash, err := CalculateSha(o)
 	if err != nil {
@@ -176,10 +154,11 @@ func WriteObject(o GitObject, repo *repository.Repository) (*hashing.SHA, error)
 	}
 	hexHash := hash.AsString()
 
-	path, err := repo.RepositoryFile(true, "objects", hexHash[0:2], hexHash[2:])
-	if err != nil {
-		return nil, err
+	// First, create directory structure if it does not exist
+	if _, err := repo.RepositoryDir(true, "objects", hexHash[0:2]); err != nil {
+		return nil, fmt.Errorf("failed to create directory under objects: %s", err)
 	}
+	path := repo.RepositoryPath("objects", hexHash[0:2], hexHash[2:])
 
 	if !fs.PathExists(path) {
 		err := fs.WriteStringToFile(path, "")
