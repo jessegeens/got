@@ -9,6 +9,7 @@ import (
 
 	"github.com/jessegeens/go-toolbox/pkg/command"
 	"github.com/jessegeens/go-toolbox/pkg/fs"
+	"github.com/jessegeens/go-toolbox/pkg/hashing"
 	"github.com/jessegeens/go-toolbox/pkg/index"
 	"github.com/jessegeens/go-toolbox/pkg/objects"
 	"github.com/jessegeens/go-toolbox/pkg/repository"
@@ -121,12 +122,12 @@ func TestGitWorkflow(t *testing.T) {
 		}
 
 		// Verify the file content was hashed and stored
-		if entry.SHA == "" {
+		if entry.SHA == nil {
 			t.Error("Expected SHA to be set")
 		}
 
 		// Verify the blob object was created
-		objPath := filepath.Join(repo.GitDir(), "objects", entry.SHA[:2], entry.SHA[2:])
+		objPath := filepath.Join(repo.GitDir(), "objects", entry.SHA.AsString()[:2], entry.SHA.AsString()[2:])
 		if !fs.IsFile(objPath) {
 			t.Errorf("Expected object file to exist at %s", objPath)
 		}
@@ -197,7 +198,11 @@ func TestGitWorkflow(t *testing.T) {
 		}
 
 		// Verify we can read the commit object
-		commitObj, err := objects.ReadObject(repo, commitHash)
+		commitHashObj, err := hashing.NewShaFromHex(commitHash)
+		if err != nil {
+			t.Errorf("Failed to parse as hex-encoded hash %s", commitHash)
+		}
+		commitObj, err := objects.ReadObject(repo, commitHashObj)
 		if err != nil {
 			t.Fatalf("Failed to read commit object: %v", err)
 		}
@@ -219,8 +224,12 @@ func TestGitWorkflow(t *testing.T) {
 			t.Errorf("Expected tree object to exist at %s", treeObjPath)
 		}
 
+		treeHashObj, err := hashing.NewShaFromHex(string(treeHash))
+		if err != nil {
+			t.Errorf("Failed to parse as hex-encoded hash %s", treeHash)
+		}
 		// Verify we can read the tree object
-		treeObj, err := objects.ReadObject(repo, string(treeHash))
+		treeObj, err := objects.ReadObject(repo, treeHashObj)
 		if err != nil {
 			t.Fatalf("Failed to read tree object: %v", err)
 		}
@@ -250,8 +259,8 @@ func TestGitWorkflow(t *testing.T) {
 			t.Errorf("Expected 1 entry in index, got %d", len(idx.Entries))
 		}
 
-		expectedBlobHash := idx.Entries[0].SHA
-		actualBlobHash := string(treeItem.Sha)
+		expectedBlobHash := idx.Entries[0].SHA.AsString()
+		actualBlobHash := treeItem.Sha.AsString()
 		if actualBlobHash != expectedBlobHash {
 			t.Errorf("Expected tree item to point to blob %s, got %s", expectedBlobHash, actualBlobHash)
 		}
