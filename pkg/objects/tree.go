@@ -3,9 +3,7 @@ package objects
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/hex"
 	"errors"
-	"fmt"
 	"maps"
 	"path"
 	"path/filepath"
@@ -15,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/jessegeens/go-toolbox/pkg/fs"
+	"github.com/jessegeens/go-toolbox/pkg/hashing"
 	"github.com/jessegeens/go-toolbox/pkg/index"
 	"github.com/jessegeens/go-toolbox/pkg/repository"
 )
@@ -32,7 +31,7 @@ import (
 // Followed by the object’s SHA-1 in binary encoding, on 20 bytes.
 
 type TreeLeaf struct {
-	Sha  []byte
+	Sha  *hashing.SHA
 	Path []byte
 	Mode []byte
 }
@@ -49,20 +48,11 @@ func (t *Tree) Serialize() ([]byte, error) {
 
 	data := []byte{}
 	for _, leaf := range t.Items {
-		if len(leaf.Sha) != 40 {
-			return nil, errors.New("tree leaf got binary sha instead of hex sha")
-		}
-
-		binarySha, err := hex.DecodeString(string(leaf.Sha))
-		if err != nil {
-			return nil, errors.New("tree leaf got invalid hex sha: " + err.Error())
-		}
-
 		data = append(data, leaf.Mode...)
 		data = append(data, ' ')
 		data = append(data, leaf.Path...)
 		data = append(data, 0x00)
-		data = append(data, binarySha...)
+		data = append(data, leaf.Sha.AsBytes()...)
 	}
 	return data, nil
 }
@@ -78,10 +68,11 @@ func (t *Tree) Type() GitObjectType {
 }
 
 func (l *TreeLeaf) PrintSHA() string {
-	rawSha := binary.BigEndian.Uint64(l.Sha)
+	// rawSha := binary.BigEndian.Uint64(l.Sha.AsBytes())
 
-	// Convert to hex, with left padding to 40 chars if necessary
-	return fmt.Sprintf("%40x", int64(rawSha))
+	// // Convert to hex, with left padding to 40 chars if necessary
+	// return fmt.Sprintf("%40x", int64(rawSha))
+	return l.Sha.AsString()
 }
 
 func (l *TreeLeaf) PrintPath() string {
@@ -131,11 +122,12 @@ func parseLeaf(databuffer []byte, start int) (int, *TreeLeaf, error) {
 	// Now we can read the path
 	path := data[spaceTermLoc+1 : nullTermLoc]
 
-	// And then we read the SHA, which has length 40 (which is equal to 20 bytes)
+	// And then we read the SHA, which in bytes hash length 20
 	rawSha := data[nullTermLoc+1 : nullTermLoc+21]
+	sha := hashing.NewSHA(rawSha)
 
 	nextLeafLocation := start + nullTermLoc + 21
-	return nextLeafLocation, &TreeLeaf{rawSha, path, mode}, nil
+	return nextLeafLocation, &TreeLeaf{sha, path, mode}, nil
 }
 
 // Sorting matters for trees, because the order of the tree determines its hash
@@ -150,12 +142,12 @@ func sortingKey(leaf *TreeLeaf) string {
 
 // Given a repository and a reference to a tree object, return the tree
 // in the form of a map, where the keys are full paths and tha values are SHAs
-func MapFromTree(repo *repository.Repository, treeRef string) (map[string]string, error) {
+func MapFromTree(repo *repository.Repository, treeRef string) (map[string]*hashing.SHA, error) {
 	return mapFromTree(repo, treeRef, "")
 }
 
-func mapFromTree(repo *repository.Repository, treeRef string, pathPrefix string) (map[string]string, error) {
-	ret := make(map[string]string)
+func mapFromTree(repo *repository.Repository, treeRef string, pathPrefix string) (map[string]*hashing.SHA, error) {
+	ret := make(map[string]*hashing.SHA)
 
 	treeSha, err := Find(repo, treeRef, TypeNoTypeSpecified, true)
 	if err != nil {
@@ -168,7 +160,7 @@ func mapFromTree(repo *repository.Repository, treeRef string, pathPrefix string)
 	}
 	tree, ok := obj.(*Tree)
 	if !ok {
-		return nil, errors.New("passed reference " + treeSha + " does not correspond to a tree, but is a " + obj.Type().String())
+		return nil, errors.New("passed reference " + treeSha.AsString() + " does not correspond to a tree, but is a " + obj.Type().String())
 	}
 
 	for _, leaf := range tree.Items {
@@ -177,13 +169,13 @@ func mapFromTree(repo *repository.Repository, treeRef string, pathPrefix string)
 		// If the path is a directory, (i.e. the child is another tree), we recurse
 		// Otherwise, we set the SHA
 		if fs.IsDirectory(fullPath) {
-			res, err := mapFromTree(repo, string(leaf.Sha), fullPath)
+			res, err := mapFromTree(repo, leaf.Sha.AsString(), fullPath)
 			if err != nil {
 				return nil, err
 			}
 			maps.Copy(ret, res)
 		} else {
-			ret[fullPath] = string(leaf.Sha)
+			ret[fullPath] = leaf.Sha
 		}
 	}
 
@@ -197,7 +189,6 @@ func TreeFromIndex(repo *repository.Repository, idx *index.Index) (string, error
 
 func treeFromIndex(repo *repository.Repository, idx *index.Index) (string, error) {
 	contents := make(map[string][]*index.Entry)
-	var err error
 
 	for _, e := range idx.Entries {
 		dirname := filepath.Dir(e.Name)
@@ -229,17 +220,18 @@ func treeFromIndex(repo *repository.Repository, idx *index.Index) (string, error
 			enc.PutUint16(modeBytes, uint16(index.ModeTypeRegular))
 			leaf := TreeLeaf{
 				Mode: modeBytes,
-				Sha:  []byte(e.SHA),
+				Sha:  e.SHA,
 				Path: []byte(filepath.Base(e.Name)),
 			}
 
 			tree.Items = append(tree.Items, &leaf)
 		}
 
-		currentSha, err = WriteObject(GitObject(&tree), repo)
+		sha, err := WriteObject(GitObject(&tree), repo)
 		if err != nil {
 			return "", err
 		}
+		currentSha = sha.AsString()
 
 	}
 

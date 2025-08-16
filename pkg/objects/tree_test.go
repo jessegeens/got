@@ -2,14 +2,19 @@ package objects
 
 import (
 	"bytes"
-	"encoding/hex"
 	"reflect"
 	"testing"
+
+	"github.com/jessegeens/go-toolbox/pkg/hashing"
 )
+
+func generateFakeHashFromChar(char byte) *hashing.SHA {
+	return hashing.NewSHA(bytes.Repeat([]byte{char}, 20))
+}
 
 func TestTreeLeaf_PrintSHA(t *testing.T) {
 	// Create a sample SHA (20 bytes)
-	sha, _ := hex.DecodeString("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391")
+	sha, _ := hashing.NewShaFromHex("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391")
 	leaf := &TreeLeaf{
 		Sha:  sha,
 		Path: []byte("test.txt"),
@@ -32,18 +37,18 @@ func TestTreeSorting(t *testing.T) {
 		{
 			name: "mixed files and directories",
 			input: []*TreeLeaf{
-				{Path: []byte("file.txt"), Mode: []byte("100644"), Sha: bytes.Repeat([]byte{'a'}, 20)},
-				{Path: []byte("dir"), Mode: []byte("040000"), Sha: bytes.Repeat([]byte{'b'}, 20)},
-				{Path: []byte("afile.txt"), Mode: []byte("100644"), Sha: bytes.Repeat([]byte{'c'}, 20)},
+				{Path: []byte("file.txt"), Mode: []byte("100644"), Sha: generateFakeHashFromChar('a')},
+				{Path: []byte("dir"), Mode: []byte("040000"), Sha: generateFakeHashFromChar('b')},
+				{Path: []byte("afile.txt"), Mode: []byte("100644"), Sha: generateFakeHashFromChar('c')},
 			},
 			expected: []string{"afile.txt", "dir", "file.txt"},
 		},
 		{
 			name: "only files",
 			input: []*TreeLeaf{
-				{Path: []byte("z.txt"), Mode: []byte("100644"), Sha: bytes.Repeat([]byte{'a'}, 20)},
-				{Path: []byte("a.txt"), Mode: []byte("100644"), Sha: bytes.Repeat([]byte{'b'}, 20)},
-				{Path: []byte("m.txt"), Mode: []byte("100644"), Sha: bytes.Repeat([]byte{'c'}, 20)},
+				{Path: []byte("z.txt"), Mode: []byte("100644"), Sha: generateFakeHashFromChar('a')},
+				{Path: []byte("a.txt"), Mode: []byte("100644"), Sha: generateFakeHashFromChar('b')},
+				{Path: []byte("m.txt"), Mode: []byte("100644"), Sha: generateFakeHashFromChar('c')},
 			},
 			expected: []string{"a.txt", "m.txt", "z.txt"},
 		},
@@ -126,7 +131,7 @@ func TestParseLeaf(t *testing.T) {
 			if !bytes.Equal(leaf.Path, tt.wantPath) {
 				t.Errorf("Path = %s, want %s", leaf.Path, tt.wantPath)
 			}
-			gotSHAHex := hex.EncodeToString(leaf.Sha)
+			gotSHAHex := leaf.Sha.AsString()
 			if gotSHAHex != tt.wantSHAHex {
 				t.Errorf("SHA = %s, want %s", gotSHAHex, tt.wantSHAHex)
 			}
@@ -141,8 +146,8 @@ func TestParseLeaf(t *testing.T) {
 
 func TestTree_SerializeDeserialize(t *testing.T) {
 	// Create a sample tree
-	sha1, _ := hex.DecodeString("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391")
-	sha2, _ := hex.DecodeString("7601d7f6231db6a45a62a9377c57425eba9623c3")
+	sha1, _ := hashing.NewShaFromHex("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391")
+	sha2, _ := hashing.NewShaFromHex("7601d7f6231db6a45a62a9377c57425eba9623c3")
 	originalTree := &Tree{
 		Items: []*TreeLeaf{
 			{
@@ -185,7 +190,7 @@ func TestTree_SerializeDeserialize(t *testing.T) {
 		if !bytes.Equal(original.Path, got.Path) {
 			t.Errorf("Item %d Path = %s, want %s", i, got.Path, original.Path)
 		}
-		if !bytes.Equal(original.Sha, got.Sha) {
+		if original.Sha.AsString() != got.Sha.AsString() {
 			t.Errorf("Item %d SHA = %x, want %x", i, got.Sha, original.Sha)
 		}
 	}

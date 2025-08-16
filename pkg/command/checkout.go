@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jessegeens/go-toolbox/pkg/hashing"
 	"github.com/jessegeens/go-toolbox/pkg/objects"
 	"github.com/jessegeens/go-toolbox/pkg/repository"
 )
@@ -22,7 +23,11 @@ func CheckoutCommand() *Command {
 			return err
 		}
 
-		object, err := objects.ReadObject(repo, commit)
+		commitHash, err := hashing.NewShaFromHex(commit)
+		if err != nil {
+			return err
+		}
+		object, err := objects.ReadObject(repo, commitHash)
 		if err != nil {
 			return err
 		}
@@ -58,7 +63,7 @@ func CheckoutCommand() *Command {
 
 func treeCheckout(repo *repository.Repository, tree *objects.Tree, path string) error {
 	for _, item := range tree.Items {
-		obj, err := objects.ReadObject(repo, string(item.Sha))
+		obj, err := objects.ReadObject(repo, item.Sha)
 		if err != nil {
 			return err
 		}

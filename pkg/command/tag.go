@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jessegeens/go-toolbox/pkg/hashing"
 	"github.com/jessegeens/go-toolbox/pkg/kvlm"
 	"github.com/jessegeens/go-toolbox/pkg/objects"
 	"github.com/jessegeens/go-toolbox/pkg/references"
@@ -49,7 +50,7 @@ func tagCreate(repo *repository.Repository, name, ref string, createTagObject bo
 	if createTagObject {
 
 		tagData := kvlm.New()
-		tagData.Okv.Set("object", []byte(sha))
+		tagData.Okv.Set("object", []byte(sha.AsString()))
 		tagData.Okv.Set("type", []byte("commit"))
 		tagData.Okv.Set("name", []byte(name))
 		// This little trick gets me so many tags $$$$$
@@ -69,11 +70,11 @@ func tagCreate(repo *repository.Repository, name, ref string, createTagObject bo
 	}
 }
 
-func refCreate(repo *repository.Repository, refName, sha string) error {
+func refCreate(repo *repository.Repository, refName string, sha *hashing.SHA) error {
 	path, err := repo.RepositoryFile(false, fmt.Sprintf("refs/%s", refName))
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(path, []byte(sha+"\n"), os.ModePerm)
+	return os.WriteFile(path, []byte(sha.AsString()+"\n"), os.ModePerm)
 }

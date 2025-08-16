@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jessegeens/go-toolbox/pkg/hashing"
 	"github.com/jessegeens/go-toolbox/pkg/objects"
 	"github.com/jessegeens/go-toolbox/pkg/repository"
 )
@@ -31,7 +32,7 @@ func handleLogCommand(commit string) error {
 
 	fmt.Println("digraph gitlog{")
 	fmt.Println("  node[shape=rect]")
-	logGraphviz(repo, obj, make(map[string]bool))
+	logGraphviz(repo, obj.AsString(), make(map[string]bool))
 	fmt.Println("}")
 	return nil
 }
@@ -45,7 +46,8 @@ func logGraphviz(repo *repository.Repository, objSha string, seen map[string]boo
 	seen[objSha] = true
 
 	// Get commit data
-	gitobj, err := objects.ReadObject(repo, objSha)
+	sha, _ := hashing.NewShaFromHex(objSha)
+	gitobj, err := objects.ReadObject(repo, sha)
 	if err != nil {
 		return err
 	}

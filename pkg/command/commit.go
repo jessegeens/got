@@ -9,6 +9,7 @@ import (
 
 	"github.com/jessegeens/go-toolbox/pkg/config"
 	"github.com/jessegeens/go-toolbox/pkg/fs"
+	"github.com/jessegeens/go-toolbox/pkg/hashing"
 	"github.com/jessegeens/go-toolbox/pkg/index"
 	"github.com/jessegeens/go-toolbox/pkg/kvlm"
 	"github.com/jessegeens/go-toolbox/pkg/objects"
@@ -32,18 +33,18 @@ func CommitCommand() *Command {
 	return command
 }
 
-func commit(repo *repository.Repository, message string) (string, error) {
+func commit(repo *repository.Repository, message string) (*hashing.SHA, error) {
 	// We ignore errors on purpose, because the user may not have a gitconfig file
 	cfg, _ := config.Read()
 
 	idx, err := index.Read(repo)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	tree, err := objects.TreeFromIndex(repo, idx)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	user, ok := cfg.GetUser()
@@ -82,18 +83,18 @@ func commit(repo *repository.Repository, message string) (string, error) {
 		return commit, err
 	}
 
-	err = fs.WriteStringToFile(file, commit+"\n")
+	err = fs.WriteStringToFile(file, commit.AsString()+"\n")
 	return commit, err
 
 }
 
-func createCommit(repo *repository.Repository, tree, parent, author, message string, timestamp time.Time) (string, error) {
+func createCommit(repo *repository.Repository, tree string, parent *hashing.SHA, author, message string, timestamp time.Time) (*hashing.SHA, error) {
 	data := kvlm.New()
 
 	data.Okv.Set("tree", []byte(tree))
 
-	if parent != "" {
-		data.Okv.Set("parent", []byte(parent))
+	if parent != nil {
+		data.Okv.Set("parent", []byte(parent.AsString()))
 	}
 
 	message = strings.TrimSpace(message) + "\n"

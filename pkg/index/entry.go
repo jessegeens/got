@@ -3,6 +3,8 @@ package index
 import (
 	"slices"
 	"time"
+
+	"github.com/jessegeens/go-toolbox/pkg/hashing"
 )
 
 type ModeType uint16
@@ -19,16 +21,14 @@ type Entry struct {
 	// Modification Time
 	MTime time.Time
 	// ID of Device containing this file
-	Dev       uint32
-	Inode     uint32
-	ModeType  ModeType
-	ModePerms uint16
-	UID       uint32
-	GID       uint32
-	Size      uint32
-	// SHA in hex format
-	// Should thus be a string of length 40
-	SHA             string
+	Dev             uint32
+	Inode           uint32
+	ModeType        ModeType
+	ModePerms       uint16
+	UID             uint32
+	GID             uint32
+	Size            uint32
+	SHA             *hashing.SHA
 	FlagAssumeValid bool
 	FlagStage       uint16
 	// Full path

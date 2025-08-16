@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jessegeens/go-toolbox/pkg/hashing"
 	"github.com/jessegeens/go-toolbox/pkg/repository"
 )
 
@@ -32,6 +33,10 @@ func cleanupTestRepo(t *testing.T, repo *repository.Repository) {
 }
 
 func TestNewIndex(t *testing.T) {
+	sha, err := hashing.NewShaFromHex("0123456789abcdef0123456789abcdef01234567")
+	if err != nil {
+		t.Errorf("Failed to create SHA hash")
+	}
 	entries := []*Entry{
 		{
 			CTime:           time.Now(),
@@ -43,7 +48,7 @@ func TestNewIndex(t *testing.T) {
 			UID:             1000,
 			GID:             1000,
 			Size:            1024,
-			SHA:             "0123456789abcdef0123456789abcdef01234567",
+			SHA:             sha,
 			FlagAssumeValid: false,
 			FlagStage:       0,
 			Name:            "test.txt",
@@ -63,6 +68,9 @@ func TestIndexWriteAndRead(t *testing.T) {
 	repo := setupTestRepo(t)
 	defer cleanupTestRepo(t, repo)
 
+	sha1, _ := hashing.NewShaFromHex("0123456789abcdef01230123456789abcdef0123")
+	sha2, _ := hashing.NewShaFromHex("abcdef0123456789abcdabcdef0123456789abcd")
+
 	// Create test entries
 	now := time.Now()
 	testEntries := []*Entry{
@@ -76,7 +84,7 @@ func TestIndexWriteAndRead(t *testing.T) {
 			UID:             1000,
 			GID:             1000,
 			Size:            1024,
-			SHA:             "0123456789abcdef0123",
+			SHA:             sha1,
 			FlagAssumeValid: false,
 			FlagStage:       0,
 			Name:            "test.txt",
@@ -91,7 +99,7 @@ func TestIndexWriteAndRead(t *testing.T) {
 			UID:             1000,
 			GID:             1000,
 			Size:            0,
-			SHA:             "abcdef0123456789abcd",
+			SHA:             sha2,
 			FlagAssumeValid: true,
 			FlagStage:       0xFF & uint16(12288),
 			Name:            "link.txt",
@@ -214,6 +222,7 @@ func TestIndexWithEmptyEntries(t *testing.T) {
 func TestIndexWithLongFilename(t *testing.T) {
 	repo := setupTestRepo(t)
 	defer cleanupTestRepo(t, repo)
+	sha, _ := hashing.NewShaFromHex("0123456789abcdef01230123456789abcdef0123")
 
 	// Create entry with long filename
 	longName := strings.Repeat("a", 0xFF+1)
@@ -228,7 +237,7 @@ func TestIndexWithLongFilename(t *testing.T) {
 			UID:             1000,
 			GID:             1000,
 			Size:            1024,
-			SHA:             "0123456789abcdef0123",
+			SHA:             sha,
 			FlagAssumeValid: false,
 			FlagStage:       0,
 			Name:            longName,

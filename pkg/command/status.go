@@ -70,7 +70,7 @@ func statusHeadIndex(repo *repository.Repository, idx *index.Index) error {
 
 	for _, entry := range idx.Entries {
 		if sha, ok := head[entry.Name]; ok {
-			if sha != entry.SHA {
+			if sha.AsString() != entry.SHA.AsString() {
 				fmt.Printf("  modified: %s\n", entry.Name)
 			}
 			delete(head, entry.Name)

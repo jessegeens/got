@@ -2,7 +2,6 @@ package objects
 
 import (
 	"bytes"
-	"crypto/sha1"
 	"encoding/hex"
 	"os"
 	"path/filepath"
@@ -86,25 +85,25 @@ func TestEncode(t *testing.T) {
 	}
 }
 
-func TestCalculateHexSha(t *testing.T) {
-	// Create a simple blob
-	blob := &Blob{data: []byte("test content")}
+// func TestCalculateHexSha(t *testing.T) {
+// 	// Create a simple blob
+// 	blob := &Blob{data: []byte("test content")}
 
-	// Calculate expected SHA
-	hasher := sha1.New()
-	encoded, _ := Encode(blob)
-	hasher.Write(encoded)
-	expectedSha := hex.EncodeToString(hasher.Sum(nil))
+// 	// Calculate expected SHA
+// 	hasher := sha1.New()
+// 	encoded, _ := Encode(blob)
+// 	hasher.Write(encoded)
+// 	expectedSha := hex.EncodeToString(hasher.Sum(nil))
 
-	// Test CalculateSha
-	got, err := CalculateHexSha(blob)
-	if err != nil {
-		t.Fatalf("CalculateHexSha() error = %v", err)
-	}
-	if got != expectedSha {
-		t.Errorf("CalculateHexSha() = %v, want %v", got, expectedSha)
-	}
-}
+// 	// Test CalculateSha
+// 	got, err := CalculateHexSha(blob)
+// 	if err != nil {
+// 		t.Fatalf("CalculateHexSha() error = %v", err)
+// 	}
+// 	if got != expectedSha {
+// 		t.Errorf("CalculateHexSha() = %v, want %v", got, expectedSha)
+// 	}
+// }
 
 func TestObjectHash(t *testing.T) {
 	repo := setupTestRepo(t)
@@ -118,17 +117,17 @@ func TestObjectHash(t *testing.T) {
 	}
 
 	// Verify hex hash is 40 characters long (SHA-1 hex)
-	if len(hash) != 40 {
-		t.Errorf("ObjectHash() length = %d, want 40", len(hash))
+	if len(hash.AsString()) != 40 {
+		t.Errorf("ObjectHash() string length = %d, want 40", len(hash.AsString()))
 	}
 
 	// Verify hash is valid hex
-	if _, err := hex.DecodeString(hash); err != nil {
+	if _, err := hex.DecodeString(hash.AsString()); err != nil {
 		t.Errorf("ObjectHash() = %v, want valid hex", hash)
 	}
 
 	// Verify object was written to the correct location
-	objPath := filepath.Join(repo.GitDir(), "objects", hash[:2], hash[2:])
+	objPath := filepath.Join(repo.GitDir(), "objects", hash.AsString()[:2], hash.AsString()[2:])
 	if _, err := os.Stat(objPath); os.IsNotExist(err) {
 		t.Errorf("Object file not created at %s", objPath)
 	}
@@ -191,7 +190,7 @@ func TestResolve(t *testing.T) {
 
 	// Update HEAD to point to our commit
 	headPath := filepath.Join(repo.GitDir(), "HEAD")
-	if err := os.WriteFile(headPath, []byte(commitHash+"\n"), 0644); err != nil {
+	if err := os.WriteFile(headPath, []byte(commitHash.AsString()+"\n"), 0644); err != nil {
 		t.Fatalf("Failed to update HEAD: %v", err)
 	}
 
@@ -200,7 +199,7 @@ func TestResolve(t *testing.T) {
 	if err := os.MkdirAll(filepath.Dir(branchPath), 0755); err != nil {
 		t.Fatalf("Failed to create branch directory: %v", err)
 	}
-	if err := os.WriteFile(branchPath, []byte(commitHash+"\n"), 0644); err != nil {
+	if err := os.WriteFile(branchPath, []byte(commitHash.AsString()+"\n"), 0644); err != nil {
 		t.Fatalf("Failed to create branch reference: %v", err)
 	}
 
@@ -212,8 +211,8 @@ func TestResolve(t *testing.T) {
 		{"empty name", "", true},
 		{"HEAD", "HEAD", false},
 		{"master", "master", false},
-		{"short hash", hash[:4], false},
-		{"full hash", hash, false},
+		{"short hash", hash.AsString()[:4], false},
+		{"full hash", hash.AsString(), false},
 	}
 
 	for _, tt := range tests {
@@ -236,14 +235,14 @@ func TestFind(t *testing.T) {
 
 	// Create and write a test blob
 	blob := &Blob{data: []byte("test content")}
-	blobHexHash, err := WriteObject(blob, repo)
+	blobHash, err := WriteObject(blob, repo)
 	if err != nil {
 		t.Fatalf("Failed to write test blob: %v", err)
 	}
-	blobHash, err := hex.DecodeString(blobHexHash)
-	if err != nil {
-		t.Fatalf("Failed to decode hash: %v", err)
-	}
+	// blobHash, err := hex.DecodeString(blobHexHash)
+	// if err != nil {
+	// 	t.Fatalf("Failed to decode hash: %v", err)
+	// }
 
 	//Create and write a test tree that points to our blob
 	tree := &Tree{
@@ -251,11 +250,11 @@ func TestFind(t *testing.T) {
 			{
 				Mode: []byte("100644"),
 				Path: []byte("test.txt"),
-				Sha:  []byte(blobHash),
+				Sha:  blobHash,
 			},
 		},
 	}
-	treeHexHash, err := WriteObject(tree, repo)
+	treeHash, err := WriteObject(tree, repo)
 	if err != nil {
 		t.Fatalf("Failed to write test tree: %v", err)
 	}
@@ -271,7 +270,7 @@ func TestFind(t *testing.T) {
 		MTime:           time.Now(),
 		Dev:             uint32(123),
 		Inode:           uint32(456),
-		SHA:             string(blobHash),
+		SHA:             blobHash,
 		ModeType:        index.ModeTypeRegular,
 		ModePerms:       0o644,
 		UID:             0,
@@ -311,7 +310,7 @@ func TestFind(t *testing.T) {
 	}
 
 	// Verify commit was written correctly
-	commitPath := filepath.Join(repo.GitDir(), "objects", commitHash[:2], commitHash[2:])
+	commitPath := filepath.Join(repo.GitDir(), "objects", commitHash.AsString()[:2], commitHash.AsString()[2:])
 	if _, err := os.Stat(commitPath); os.IsNotExist(err) {
 		t.Fatalf("Commit not written to %s", commitPath)
 	}
@@ -327,7 +326,7 @@ func TestFind(t *testing.T) {
 	if err := os.MkdirAll(filepath.Dir(branchPath), 0755); err != nil {
 		t.Fatalf("Failed to create branch directory: %v", err)
 	}
-	if err := os.WriteFile(branchPath, []byte(commitHash+"\n"), 0644); err != nil {
+	if err := os.WriteFile(branchPath, []byte(commitHash.AsString()+"\n"), 0644); err != nil {
 		t.Fatalf("Failed to create branch reference: %v", err)
 	}
 
@@ -343,9 +342,9 @@ func TestFind(t *testing.T) {
 		follow  bool
 		wantErr bool
 	}{
-		{"find blob by hash", blobHexHash, TypeBlob, true, false},
-		{"find tree by hash", treeHexHash, TypeTree, true, false},
-		{"find commit by hash", commitHash, TypeCommit, true, false},
+		{"find blob by hash", blobHash.AsString(), TypeBlob, true, false},
+		{"find tree by hash", treeHash.AsString(), TypeTree, true, false},
+		{"find commit by hash", commitHash.AsString(), TypeCommit, true, false},
 		{"find blob by ref", "master", TypeBlob, true, true},  // Should fail as it's a commit
 		{"find tree by ref", "master", TypeTree, true, false}, // Should succeed as commit points to tree
 		{"find commit by ref", "master", TypeCommit, true, false},
@@ -375,7 +374,7 @@ func TestWriteObject(t *testing.T) {
 		}
 
 		// Verify object file exists
-		objPath := filepath.Join(repo.GitDir(), "objects", hash[:2], hash[2:])
+		objPath := filepath.Join(repo.GitDir(), "objects", hash.AsString()[:2], hash.AsString()[2:])
 		if _, err := os.Stat(objPath); os.IsNotExist(err) {
 			t.Errorf("Object file not created at %s", objPath)
 		}
@@ -403,16 +402,12 @@ func TestWriteObject(t *testing.T) {
 			t.Fatalf("Failed to write test blob: %v", err)
 		}
 
-		binaryHash, err := hex.DecodeString(blobHash)
-		if err != nil {
-			t.FailNow()
-		}
 		tree := &Tree{
 			Items: []*TreeLeaf{
 				{
 					Mode: []byte("100644"),
 					Path: []byte("test.txt"),
-					Sha:  []byte(binaryHash),
+					Sha:  blobHash,
 				},
 			},
 		}
@@ -422,7 +417,7 @@ func TestWriteObject(t *testing.T) {
 		}
 
 		// Verify object file exists
-		objPath := filepath.Join(repo.GitDir(), "objects", hash[:2], hash[2:])
+		objPath := filepath.Join(repo.GitDir(), "objects", hash.AsString()[:2], hash.AsString()[2:])
 		if _, err := os.Stat(objPath); os.IsNotExist(err) {
 			t.Errorf("Object file not created at %s", objPath)
 		}
@@ -442,7 +437,7 @@ func TestWriteObject(t *testing.T) {
 		if !bytes.Equal(tree.Items[0].Path, []byte("test.txt")) {
 			t.Errorf("Tree item path = %q, want %q", tree.Items[0].Path, "test.txt")
 		}
-		if hex.EncodeToString(tree.Items[0].Sha) != blobHash {
+		if tree.Items[0].Sha != blobHash {
 			t.Errorf("Tree item sha = %q, want %q", tree.Items[0].Sha, blobHash)
 		}
 	})
@@ -456,32 +451,23 @@ func TestWriteObject(t *testing.T) {
 			t.Fatalf("Failed to write test blob: %v", err)
 		}
 
-		binaryHash, err := hex.DecodeString(blobHash)
-		if err != nil {
-			t.FailNow()
-		}
-
 		tree := &Tree{
 			Items: []*TreeLeaf{
 				{
 					Mode: []byte("100644"),
 					Path: []byte("test.txt"),
-					Sha:  []byte(binaryHash),
+					Sha:  blobHash,
 				},
 			},
 		}
-		treeHexHash, err := WriteObject(tree, repo)
+		treeHash, err := WriteObject(tree, repo)
 		if err != nil {
 			t.Fatalf("Failed to write test tree: %v", err)
-		}
-		treeHash, err := hex.DecodeString(treeHexHash)
-		if err != nil {
-			t.Fatalf("Failed to decode hash: %v", err)
 		}
 
 		// Create the commit
 		commitData := kvlm.New()
-		commitData.Okv.Set("tree", []byte(treeHash))
+		commitData.Okv.Set("tree", []byte(treeHash.AsString()))
 		commitData.Okv.Set("author", []byte("Test Author <test@example.com>"))
 		commitData.Okv.Set("committer", []byte("Test Committer <test@example.com>"))
 		commitData.Message = []byte("Test commit message")
@@ -493,7 +479,7 @@ func TestWriteObject(t *testing.T) {
 		}
 
 		// Verify object file exists
-		objPath := filepath.Join(repo.GitDir(), "objects", hash[:2], hash[2:])
+		objPath := filepath.Join(repo.GitDir(), "objects", hash.AsString()[:2], hash.AsString()[2:])
 		if _, err := os.Stat(objPath); os.IsNotExist(err) {
 			t.Errorf("Object file not created at %s", objPath)
 		}
@@ -514,7 +500,7 @@ func TestWriteObject(t *testing.T) {
 		if !ok {
 			t.Error("Commit missing tree value")
 		}
-		if !bytes.Equal(treeVal, []byte(treeHash)) {
+		if !bytes.Equal(treeVal, []byte(treeHash.AsString())) {
 			t.Errorf("Commit tree = %q, want %q", treeVal, treeHash)
 		}
 	})
@@ -528,48 +514,35 @@ func TestWriteObject(t *testing.T) {
 			t.Fatalf("Failed to write test blob: %v", err)
 		}
 
-		binaryHash, err := hex.DecodeString(blobHash)
-		if err != nil {
-			t.FailNow()
-		}
-
 		tree := &Tree{
 			Items: []*TreeLeaf{
 				{
 					Mode: []byte("100644"),
 					Path: []byte("test.txt"),
-					Sha:  []byte(binaryHash),
+					Sha:  blobHash,
 				},
 			},
 		}
-		treeHexHash, err := WriteObject(tree, repo)
+		treeHash, err := WriteObject(tree, repo)
 		if err != nil {
 			t.Fatalf("Failed to write test tree: %v", err)
-		}
-		treeHash, err := hex.DecodeString(treeHexHash)
-		if err != nil {
-			t.Fatalf("Failed to decode hash: %v", err)
 		}
 
 		// Create a commit
 		commitData := kvlm.New()
-		commitData.Okv.Set("tree", []byte(treeHash))
+		commitData.Okv.Set("tree", []byte(treeHash.AsString()))
 		commitData.Okv.Set("author", []byte("Test Author <test@example.com>"))
 		commitData.Okv.Set("committer", []byte("Test Committer <test@example.com>"))
 		commitData.Message = []byte("Test commit message")
 		commit := NewCommit(commitData)
-		commitHexHash, err := WriteObject(commit, repo)
+		commitHash, err := WriteObject(commit, repo)
 		if err != nil {
 			t.Fatalf("Failed to write test commit: %v", err)
-		}
-		commitHash, err := hex.DecodeString(commitHexHash)
-		if err != nil {
-			t.Fatalf("Failed to decode hash: %v", err)
 		}
 
 		// Create the tag
 		tagData := kvlm.New()
-		tagData.Okv.Set("object", []byte(commitHash))
+		tagData.Okv.Set("object", []byte(commitHash.AsString()))
 		tagData.Okv.Set("type", []byte("commit"))
 		tagData.Okv.Set("tagger", []byte("Test Tagger <test@example.com>"))
 		tagData.Message = []byte("Test tag message")
@@ -581,7 +554,7 @@ func TestWriteObject(t *testing.T) {
 		}
 
 		// Verify object file exists
-		objPath := filepath.Join(repo.GitDir(), "objects", hash[:2], hash[2:])
+		objPath := filepath.Join(repo.GitDir(), "objects", hash.AsString()[:2], hash.AsString()[2:])
 		if _, err := os.Stat(objPath); os.IsNotExist(err) {
 			t.Errorf("Object file not created at %s", objPath)
 		}
@@ -602,7 +575,7 @@ func TestWriteObject(t *testing.T) {
 		if !ok {
 			t.Error("Tag missing object value")
 		}
-		if !bytes.Equal(objVal, []byte(commitHash)) {
+		if !bytes.Equal(objVal, []byte(commitHash.AsString())) {
 			t.Errorf("Tag object = %q, want %q", objVal, commitHash)
 		}
 	})

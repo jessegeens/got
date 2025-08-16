@@ -3,9 +3,8 @@ package objects
 import (
 	"bytes"
 	"compress/zlib"
-	"crypto/sha1"
-	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"regexp"
@@ -13,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/jessegeens/go-toolbox/pkg/fs"
+	"github.com/jessegeens/go-toolbox/pkg/hashing"
 	"github.com/jessegeens/go-toolbox/pkg/references"
 	"github.com/jessegeens/go-toolbox/pkg/repository"
 )
@@ -52,8 +52,8 @@ func ParseType(objectType string) (GitObjectType, error) {
 	return "", errors.New("Not a valid object type: " + objectType)
 }
 
-func ReadObject(repo *repository.Repository, sha string) (GitObject, error) {
-	path, err := repo.RepositoryFile(false, "objects", sha[0:2], sha[2:])
+func ReadObject(repo *repository.Repository, sha *hashing.SHA) (GitObject, error) {
+	path, err := repo.RepositoryFile(false, "objects", sha.AsString()[0:2], sha.AsString()[2:])
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func ReadObject(repo *repository.Repository, sha string) (GitObject, error) {
 
 	// We verify the size
 	if size != len(rawObjectContents) {
-		return nil, errors.New("malformed object " + sha + ", bad length")
+		return nil, errors.New("malformed object " + sha.AsString() + ", bad length")
 	}
 
 	switch objType {
@@ -136,68 +136,79 @@ func Encode(o GitObject) ([]byte, error) {
 	return encoded, nil
 }
 
-func CalculateHexSha(o GitObject) (string, error) {
-	binaryHash, err := CalculateBinarySHA(o)
-	if err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(binaryHash), nil
-}
-
-func CalculateBinarySHA(o GitObject) ([]byte, error) {
+func CalculateSha(o GitObject) (*hashing.SHA, error) {
 	encoded, err := Encode(o)
 	if err != nil {
 		return nil, err
 	}
 
-	hasher := sha1.New()
-	hasher.Write(encoded)
-	hash := hasher.Sum(nil)
-
+	hash := hashing.NewSHA(encoded)
 	return hash, nil
 }
 
-func WriteObject(o GitObject, repo *repository.Repository) (string, error) {
-	hexHash, err := CalculateHexSha(o)
+// func CalculateHexSha(o GitObject) (string, error) {
+// 	binaryHash, err := CalculateBinarySHA(o)
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	return hex.EncodeToString(binaryHash), nil
+// }
+
+// func CalculateBinarySHA(o GitObject) ([]byte, error) {
+// 	encoded, err := Encode(o)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	hasher := sha1.New()
+// 	hasher.Write(encoded)
+// 	hash := hasher.Sum(nil)
+
+// 	return hash, nil
+// }
+
+func WriteObject(o GitObject, repo *repository.Repository) (*hashing.SHA, error) {
+	hash, err := CalculateSha(o)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
+	hexHash := hash.AsString()
 
 	path, err := repo.RepositoryFile(true, "objects", hexHash[0:2], hexHash[2:])
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if !fs.PathExists(path) {
 		err := fs.WriteStringToFile(path, "")
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		defer f.Close()
 
 		encodedObject, err := Encode(o)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 
 		zlibWriter := zlib.NewWriter(f)
 		_, err = zlibWriter.Write(encodedObject)
 		if err != nil {
 			zlibWriter.Close()
-			return "", err
+			return nil, err
 		}
 		err = zlibWriter.Close()
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 	}
 
-	return hexHash, nil
+	return hash, nil
 }
 
 // Find finds an object called `name` in a repository `repo`.
@@ -205,27 +216,31 @@ func WriteObject(o GitObject, repo *repository.Repository) (string, error) {
 //   - Name: can be short or long hash, HEAD, a branch name or a tag name
 //   - Follow: determines if we follow tags or not. Recommended default is `true`
 //   - Format: determines what type of object we want to locate. Use TypeNoTypeSpecified if you do not want a specific object type
-func Find(repo *repository.Repository, name string, format GitObjectType, follow bool) (string, error) {
+func Find(repo *repository.Repository, name string, format GitObjectType, follow bool) (*hashing.SHA, error) {
 	shas, err := Resolve(repo, name)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if len(shas) > 1 {
-		return "", errors.New("cannot find object ambiguous name: found " + strconv.Itoa(len(shas)) + " possible objects!")
+		return nil, errors.New("cannot find object ambiguous name: found " + strconv.Itoa(len(shas)) + " possible objects!")
 	}
 
 	if len(shas) == 0 || shas[0] == "" {
-		return "", errors.New("did not find any match for object named " + name)
+		return nil, errors.New("did not find any match for object named " + name)
 	}
 
-	sha := shas[0]
+	hexSha := shas[0]
+	sha, err := hashing.NewShaFromHex(hexSha)
+	if err != nil {
+		return nil, fmt.Errorf("malformed candidate: %s", err)
+	}
 
 	for {
 		// Not really efficient: we read the whole object just to determine its type (in a loop!)
 		obj, err := ReadObject(repo, sha)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 
 		if obj.Type() == format || format == TypeNoTypeSpecified {
@@ -233,32 +248,38 @@ func Find(repo *repository.Repository, name string, format GitObjectType, follow
 		}
 
 		if !follow {
-			return "", errors.New("did not find any match for object named " + name + " matching the specified format")
+			return nil, errors.New("did not find any match for object named " + name + " matching the specified format")
 		}
 
 		if obj.Type() == TypeTag {
 			tag := obj.(*Tag)
 			objSha, ok := tag.GetValue("object")
 			if !ok {
-				return "", errors.New("failed to parse tag")
+				return nil, errors.New("failed to parse tag")
 			}
-			sha = string(objSha)
+			sha, err = hashing.NewShaFromHex(string(objSha))
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse tag, malformed hash: %s", err)
+			}
 		} else if obj.Type() == TypeCommit && format == TypeTree {
 			commit := obj.(*Commit)
 			objSha, ok := commit.GetValue("tree")
 			if !ok || len(objSha) == 0 {
-				return "", errors.New("failed to parse commit")
+				return nil, errors.New("failed to parse commit")
 			}
-			sha = string(objSha)
+			sha, err = hashing.NewShaFromHex(string(objSha))
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse commit, malformed hash: %s", err)
+			}
 		} else {
-			return "", errors.New("did not find any match for object named " + name + " matching the specified format")
+			return nil, errors.New("did not find any match for object named " + name + " matching the specified format")
 		}
 	}
 
 	//return name, nil
 }
 
-func ObjectHash(fileContents []byte, objectType GitObjectType, repo *repository.Repository) (string, error) {
+func ObjectHash(fileContents []byte, objectType GitObjectType, repo *repository.Repository) (*hashing.SHA, error) {
 	var obj GitObject = nil
 	switch objectType {
 	case TypeBlob:
@@ -276,6 +297,9 @@ func ObjectHash(fileContents []byte, objectType GitObjectType, repo *repository.
 //   - tags
 //   - branches
 //   - remote branches
+//
+// The method returns a list of hex-encoded hashes, which are the candidates
+// that have been found for the name
 func Resolve(repo *repository.Repository, name string) ([]string, error) {
 	candidates := []string{}
 	hashRegex, err := regexp.Compile("^[0-9A-Fa-f]{4,40}$")
