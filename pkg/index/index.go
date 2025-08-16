@@ -30,10 +30,7 @@ func New(entries []*Entry) *Index {
 }
 
 func Read(repo *repository.Repository) (*Index, error) {
-	indexFile, err := repo.RepositoryFile(false, "index")
-	if err != nil {
-		return nil, err
-	}
+	indexFile := repo.RepositoryPath("index")
 
 	// New repositories don't have an index file yet
 	if !fs.Exists(indexFile) {
@@ -50,7 +47,7 @@ func Read(repo *repository.Repository) (*Index, error) {
 }
 
 func (i *Index) Write(repo *repository.Repository) error {
-	filepath, err := repo.RepositoryFile(false, "index")
+	filepath, err := repo.RepositoryFile(true, "index")
 	if err != nil {
 		return err
 	}

@@ -121,7 +121,8 @@ func (r *Repository) RepositoryPath(paths ...string) string {
 
 // Same as RepositoryPath, but create directory / file if absent
 func (r *Repository) RepositoryFile(create bool, paths ...string) (string, error) {
-	_, err := r.RepositoryDir(create, paths[:len(paths)-1]...)
+	parent := paths[:len(paths)-1]
+	_, err := r.RepositoryDir(create, parent...)
 	if err == nil {
 		path := r.RepositoryPath(paths...)
 		// We would like an error if the file does not exist, and if create is set to false

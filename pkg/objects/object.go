@@ -53,7 +53,8 @@ func ParseType(objectType string) (GitObjectType, error) {
 }
 
 func ReadObject(repo *repository.Repository, sha *hashing.SHA) (GitObject, error) {
-	path, err := repo.RepositoryFile(false, "objects", sha.AsString()[0:2], sha.AsString()[2:])
+	hexSha := sha.AsString()
+	path, err := repo.RepositoryFile(false, "objects", hexSha[0:2], hexSha[2:])
 	if err != nil {
 		return nil, err
 	}
