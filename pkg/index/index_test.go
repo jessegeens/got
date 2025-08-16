@@ -138,7 +138,7 @@ func TestIndexWriteAndRead(t *testing.T) {
 		if entry.ModePerms != e.ModePerms {
 			t.Errorf("Expected mode %o, got %o", e.ModePerms, entry.ModePerms)
 		}
-		if entry.SHA != e.SHA {
+		if entry.SHA.AsString() != e.SHA.AsString() {
 			t.Errorf("Expected SHA '%s', got '%s'", e.SHA.AsString(), entry.SHA.AsString())
 		}
 		if entry.FlagAssumeValid != e.FlagAssumeValid {

@@ -34,6 +34,12 @@ func NewShaFromHex(hash string) (*SHA, error) {
 	return NewSHA(bytes), nil
 }
 
+func NewShaFromBytes(hash []byte) *SHA {
+	return &SHA{
+		hash: hash,
+	}
+}
+
 func (s *SHA) AsBytes() []byte {
 	return s.hash
 }

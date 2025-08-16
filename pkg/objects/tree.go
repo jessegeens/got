@@ -124,7 +124,7 @@ func parseLeaf(databuffer []byte, start int) (int, *TreeLeaf, error) {
 
 	// And then we read the SHA, which in bytes hash length 20
 	rawSha := data[nullTermLoc+1 : nullTermLoc+21]
-	sha := hashing.NewSHA(rawSha)
+	sha := hashing.NewShaFromBytes(rawSha)
 
 	nextLeafLocation := start + nullTermLoc + 21
 	return nextLeafLocation, &TreeLeaf{sha, path, mode}, nil

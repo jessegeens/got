@@ -190,7 +190,7 @@ func parseIndex(index []byte) (*Index, error) {
 
 		// Parse SHA
 		sha := content[idx+40 : idx+60]
-		entry.SHA = hashing.NewSHA(sha)
+		entry.SHA = hashing.NewShaFromBytes(sha)
 
 		// Parse flags
 		flags := enc.Uint16(content[idx+60 : idx+62])

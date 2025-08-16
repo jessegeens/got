@@ -83,6 +83,8 @@ func TestTreeSorting(t *testing.T) {
 }
 
 func TestParseLeaf(t *testing.T) {
+	sha1 := hashing.NewShaFromBytes(bytes.Repeat([]byte{'a'}, 20))
+	sha2 := hashing.NewShaFromBytes(bytes.Repeat([]byte{'b'}, 20))
 	tests := []struct {
 		name        string
 		input       []byte
@@ -93,17 +95,17 @@ func TestParseLeaf(t *testing.T) {
 	}{
 		{
 			name:       "regular file",
-			input:      []byte("100644 test.txt\x00" + string(bytes.Repeat([]byte{0x01}, 20))),
+			input:      append([]byte("100644 test.txt\x00"), sha1.AsBytes()...),
 			wantMode:   []byte("100644"),
 			wantPath:   []byte("test.txt"),
-			wantSHAHex: "0101010101010101010101010101010101010101",
+			wantSHAHex: sha1.AsString(),
 		},
 		{
 			name:       "directory",
-			input:      []byte("040000 testdir\x00" + string(bytes.Repeat([]byte{0x02}, 20))),
+			input:      append([]byte("040000 testdir\x00"), sha2.AsBytes()...),
 			wantMode:   []byte("040000"),
 			wantPath:   []byte("testdir"),
-			wantSHAHex: "0202020202020202020202020202020202020202",
+			wantSHAHex: sha2.AsString(),
 		},
 		{
 			name:        "invalid mode length",
