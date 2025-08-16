@@ -320,11 +320,11 @@ func TestFind(t *testing.T) {
 	}{
 		{"find blob by hash", blobHash.AsString(), TypeBlob, true, false},
 		{"find tree by hash", treeHash.AsString(), TypeTree, true, false},
-		// {"find commit by hash", commitHash.AsString(), TypeCommit, true, false},
-		// {"find blob by ref", "master", TypeBlob, true, true},  // Should fail as it's a commit
-		// {"find tree by ref", "master", TypeTree, true, false}, // Should succeed as commit points to tree
-		// {"find commit by ref", "master", TypeCommit, true, false},
-		// {"find any by ref", "master", TypeNoTypeSpecified, true, false},
+		{"find commit by hash", commitHash.AsString(), TypeCommit, true, false},
+		{"find blob by ref", "master", TypeBlob, true, true},  // Should fail as it's a commit
+		{"find tree by ref", "master", TypeTree, true, false}, // Should succeed as commit points to tree
+		{"find commit by ref", "master", TypeCommit, true, false},
+		{"find any by ref", "master", TypeNoTypeSpecified, true, false},
 	}
 
 	for _, tt := range tests {

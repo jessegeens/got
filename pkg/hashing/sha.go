@@ -31,7 +31,7 @@ func NewShaFromHex(hash string) (*SHA, error) {
 	if len(hash) != 40 {
 		return nil, errors.New("SHAs in hex-encoded string format must always be of length 40")
 	}
-	return NewSHA(bytes), nil
+	return NewShaFromBytes(bytes), nil
 }
 
 func NewShaFromBytes(hash []byte) *SHA {
