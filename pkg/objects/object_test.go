@@ -85,26 +85,6 @@ func TestEncode(t *testing.T) {
 	}
 }
 
-// func TestCalculateHexSha(t *testing.T) {
-// 	// Create a simple blob
-// 	blob := &Blob{data: []byte("test content")}
-
-// 	// Calculate expected SHA
-// 	hasher := sha1.New()
-// 	encoded, _ := Encode(blob)
-// 	hasher.Write(encoded)
-// 	expectedSha := hex.EncodeToString(hasher.Sum(nil))
-
-// 	// Test CalculateSha
-// 	got, err := CalculateHexSha(blob)
-// 	if err != nil {
-// 		t.Fatalf("CalculateHexSha() error = %v", err)
-// 	}
-// 	if got != expectedSha {
-// 		t.Errorf("CalculateHexSha() = %v, want %v", got, expectedSha)
-// 	}
-// }
-
 func TestObjectHash(t *testing.T) {
 	repo := setupTestRepo(t)
 	defer cleanupTestRepo(t, repo)

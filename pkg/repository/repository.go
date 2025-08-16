@@ -84,7 +84,10 @@ func Create(repositoryPath string) (*Repository, error) {
 
 	repoFile, _ = repo.RepositoryFile(true, "config")
 	config := defaultRepositoryConfig()
-	config.SaveTo(repoFile)
+	err = config.SaveTo(repoFile)
+	if err != nil {
+		return nil, err
+	}
 
 	fmt.Println("Initialized new empty git repository")
 
@@ -120,7 +123,32 @@ func (r *Repository) RepositoryPath(paths ...string) string {
 func (r *Repository) RepositoryFile(create bool, paths ...string) (string, error) {
 	_, err := r.RepositoryDir(create, paths[:len(paths)-1]...)
 	if err == nil {
-		return r.RepositoryPath(paths...), nil
+		path := r.RepositoryPath(paths...)
+		// We would like an error if the file does not exist, and if create is set to false
+		_, err := os.Stat(path)
+		if !create && err == nil {
+			return path, nil
+			// If we don't want to create a potentially non-existing file, we should return
+			// an error if the file does not exist
+		} else if !create {
+			return "", err
+		}
+		// In case it is a file, we still need to create it
+		// path exists
+		if err == nil {
+			return path, nil
+		}
+		// path does not exist
+		if errors.Is(err, os.ErrNotExist) {
+			err = fs.WriteStringToFile(path, "")
+			if err != nil {
+				return "", err
+			}
+			return path, nil
+		}
+		// Other error
+		return "", err
+
 	}
 	return "", err
 }
