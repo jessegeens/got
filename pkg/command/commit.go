@@ -68,12 +68,12 @@ func commit(repo *repository.Repository, message string) (*hashing.SHA, error) {
 
 	// If we are on a branch, we update refs/heads/branch
 	if onBranch {
-		file, err := repo.RepositoryFile(false, path.Join("refs/heads", branch))
+		file, err := repo.RepositoryFile(true, path.Join("refs/heads", branch))
 		if err != nil {
 			return commit, err
 		}
 
-		err = fs.WriteStringToFile(file, fmt.Sprintf("%s\n", commit))
+		err = fs.WriteStringToFile(file, fmt.Sprintf("%s\n", commit.AsString()))
 		return commit, err
 	}
 
