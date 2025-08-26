@@ -88,10 +88,10 @@ func commit(repo *repository.Repository, message string) (*hashing.SHA, error) {
 
 }
 
-func createCommit(repo *repository.Repository, tree string, parent *hashing.SHA, author, message string, timestamp time.Time) (*hashing.SHA, error) {
+func createCommit(repo *repository.Repository, tree *hashing.SHA, parent *hashing.SHA, author, message string, timestamp time.Time) (*hashing.SHA, error) {
 	data := kvlm.New()
 
-	data.Okv.Set("tree", []byte(tree))
+	data.Okv.Set("tree", []byte(tree.AsString()))
 
 	if parent != nil {
 		data.Okv.Set("parent", []byte(parent.AsString()))

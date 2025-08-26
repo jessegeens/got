@@ -2,14 +2,37 @@ package objects
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/jessegeens/go-toolbox/pkg/hashing"
+	"github.com/jessegeens/go-toolbox/pkg/index"
+	"github.com/jessegeens/go-toolbox/pkg/repository"
 )
 
 func generateFakeHashFromChar(char byte) *hashing.SHA {
 	return hashing.NewSHA(bytes.Repeat([]byte{char}, 20))
+}
+
+func setupTreeTestRepo(t *testing.T) *repository.Repository {
+	tempDir, err := os.MkdirTemp("", "got-treefromindex-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	repo, err := repository.Create(tempDir)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
+	return repo
+}
+
+func cleanupTreeTestRepo(t *testing.T, repo *repository.Repository) {
+	if err := os.RemoveAll(repo.WorkTree()); err != nil {
+		t.Logf("Warning: failed to clean up test repository: %v", err)
+	}
 }
 
 func TestTreeLeaf_PrintSHA(t *testing.T) {
@@ -236,5 +259,156 @@ func TestSortingKey(t *testing.T) {
 				t.Errorf("sortingKey() = %v, want %v", got, tt.expected)
 			}
 		})
+	}
+}
+
+func TestTreeFromIndex_SingleFile(t *testing.T) {
+	repo := setupTreeTestRepo(t)
+	defer cleanupTreeTestRepo(t, repo)
+
+	// Create a blob object for the file content
+	blob := &Blob{data: []byte("hello from got")}
+	blobSha, err := WriteObject(blob, repo)
+	if err != nil {
+		t.Fatalf("Failed to write blob: %v", err)
+	}
+
+	// Build an index with a single entry at repository root
+	idx := index.New([]*index.Entry{})
+	idx.Entries = append(idx.Entries, &index.Entry{
+		CTime:           time.Now(),
+		MTime:           time.Now(),
+		Dev:             0,
+		Inode:           0,
+		ModeType:        index.ModeTypeRegular,
+		ModePerms:       0o644,
+		UID:             0,
+		GID:             0,
+		Size:            0,
+		SHA:             blobSha,
+		FlagAssumeValid: false,
+		FlagStage:       0,
+		Name:            "test.txt",
+	})
+
+	// Generate a tree from the index
+	treeSha, err := TreeFromIndex(repo, idx)
+	if err != nil {
+		t.Fatalf("TreeFromIndex() error = %v", err)
+	}
+	if treeSha == nil {
+		t.Fatal("TreeFromIndex() returned nil SHA")
+	}
+
+	// Read the tree object back and validate its contents
+	obj, err := ReadObject(repo, treeSha)
+	if err != nil {
+		t.Fatalf("Failed to read tree object: %v", err)
+	}
+	tree, ok := obj.(*Tree)
+	if !ok {
+		t.Fatalf("Expected object type Tree, got %T", obj)
+	}
+
+	if len(tree.Items) != 1 {
+		t.Fatalf("Expected 1 tree item, got %d", len(tree.Items))
+	}
+	item := tree.Items[0]
+	if string(item.Path) != filepath.Base("test.txt") {
+		t.Errorf("Tree item path = %q, want %q", string(item.Path), "test.txt")
+	}
+	if item.Sha.AsString() != blobSha.AsString() {
+		t.Errorf("Tree item sha = %s, want %s", item.Sha.AsString(), blobSha.AsString())
+	}
+}
+
+func TestTreeFromIndex_MultipleFiles_SingleDirectory(t *testing.T) {
+	repo := setupTreeTestRepo(t)
+	defer cleanupTreeTestRepo(t, repo)
+
+	// Create three blobs for three files
+	blobA := &Blob{data: []byte("alpha")}
+	shaA, err := WriteObject(blobA, repo)
+	if err != nil {
+		t.Fatalf("Failed to write blob A: %v", err)
+	}
+	blobB := &Blob{data: []byte("bravo")}
+	shaB, err := WriteObject(blobB, repo)
+	if err != nil {
+		t.Fatalf("Failed to write blob B: %v", err)
+	}
+	blobC := &Blob{data: []byte("charlie")}
+	shaC, err := WriteObject(blobC, repo)
+	if err != nil {
+		t.Fatalf("Failed to write blob C: %v", err)
+	}
+
+	// Build an index with three entries in the repository root
+	idx := index.New([]*index.Entry{})
+	add := func(name string, sha interface{}) {
+		var s = shaA
+		switch name {
+		case "a.txt":
+			s = shaA
+		case "b.txt":
+			s = shaB
+		case "c.txt":
+			s = shaC
+		}
+		idx.Entries = append(idx.Entries, &index.Entry{
+			CTime:           time.Now(),
+			MTime:           time.Now(),
+			ModeType:        index.ModeTypeRegular,
+			ModePerms:       0o644,
+			UID:             0,
+			GID:             0,
+			Size:            0,
+			SHA:             s,
+			FlagAssumeValid: false,
+			FlagStage:       0,
+			Name:            name,
+		})
+	}
+	add("a.txt", shaA)
+	add("b.txt", shaB)
+	add("c.txt", shaC)
+
+	// Generate a tree from the index
+	treeSha, err := TreeFromIndex(repo, idx)
+	if err != nil {
+		t.Fatalf("TreeFromIndex() error = %v", err)
+	}
+	if treeSha == nil {
+		t.Fatal("TreeFromIndex() returned nil SHA")
+	}
+
+	// Read and validate the tree
+	obj, err := ReadObject(repo, treeSha)
+	if err != nil {
+		t.Fatalf("Failed to read tree object: %v", err)
+	}
+	tree, ok := obj.(*Tree)
+	if !ok {
+		t.Fatalf("Expected object type Tree, got %T", obj)
+	}
+
+	if len(tree.Items) != 3 {
+		t.Fatalf("Expected 3 tree items, got %d", len(tree.Items))
+	}
+
+	// Build a map for easy lookup and verify all files exist with correct SHAs
+	found := map[string]string{}
+	for _, it := range tree.Items {
+		found[string(it.Path)] = it.Sha.AsString()
+	}
+
+	if found["a.txt"] != shaA.AsString() {
+		t.Errorf("a.txt sha = %s, want %s", found["a.txt"], shaA.AsString())
+	}
+	if found["b.txt"] != shaB.AsString() {
+		t.Errorf("b.txt sha = %s, want %s", found["b.txt"], shaB.AsString())
+	}
+	if found["c.txt"] != shaC.AsString() {
+		t.Errorf("c.txt sha = %s, want %s", found["c.txt"], shaC.AsString())
 	}
 }

@@ -157,7 +157,7 @@ func TestResolve(t *testing.T) {
 	if err != nil {
 		t.FailNow()
 	}
-	data.Okv.Set("tree", []byte(tree))
+	data.Okv.Set("tree", []byte(tree.AsString()))
 	data.Message = []byte("my commit message")
 	data.Okv.Set("author", []byte("jesse"))
 	data.Okv.Set("committer", []byte("jesse"))
@@ -274,7 +274,7 @@ func TestFind(t *testing.T) {
 		t.FailNow()
 	}
 
-	data.Okv.Set("tree", []byte(treeFromIdx))
+	data.Okv.Set("tree", []byte(treeFromIdx.AsString()))
 	data.Message = []byte("my commit message")
 	data.Okv.Set("author", []byte("jesse"))
 	data.Okv.Set("committer", []byte("jesse"))

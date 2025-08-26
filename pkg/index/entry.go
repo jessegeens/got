@@ -52,3 +52,16 @@ func (m ModeType) String() string {
 		return "invalid"
 	}
 }
+
+func (m ModeType) Octal() []byte {
+	switch m {
+	case ModeTypeRegular:
+		return []byte("100644")
+	case ModeTypeSymlink:
+		return []byte("120000")
+	case ModeTypeGitlink:
+		return []byte("160000")
+	default:
+		return []byte{0x00, 0x00, 0x00, 0x00, 0x00}
+	}
+}

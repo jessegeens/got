@@ -2,7 +2,6 @@ package objects
 
 import (
 	"bytes"
-	"encoding/binary"
 	"errors"
 	"maps"
 	"path"
@@ -68,10 +67,6 @@ func (t *Tree) Type() GitObjectType {
 }
 
 func (l *TreeLeaf) PrintSHA() string {
-	// rawSha := binary.BigEndian.Uint64(l.Sha.AsBytes())
-
-	// // Convert to hex, with left padding to 40 chars if necessary
-	// return fmt.Sprintf("%40x", int64(rawSha))
 	return l.Sha.AsString()
 }
 
@@ -183,11 +178,11 @@ func mapFromTree(repo *repository.Repository, treeRef string, pathPrefix string)
 
 }
 
-func TreeFromIndex(repo *repository.Repository, idx *index.Index) (string, error) {
+func TreeFromIndex(repo *repository.Repository, idx *index.Index) (*hashing.SHA, error) {
 	return treeFromIndex(repo, idx)
 }
 
-func treeFromIndex(repo *repository.Repository, idx *index.Index) (string, error) {
+func treeFromIndex(repo *repository.Repository, idx *index.Index) (*hashing.SHA, error) {
 	contents := make(map[string][]*index.Entry)
 
 	for _, e := range idx.Entries {
@@ -207,8 +202,15 @@ func treeFromIndex(repo *repository.Repository, idx *index.Index) (string, error
 		return paths[i] > paths[j]
 	})
 
-	currentSha := ""
-	enc := binary.BigEndian
+	// This will contain the current tree's SHA
+	// In our iteration, the root will come last,
+	// so we will end up with the root tree's SHA
+
+	// We initialize to the hash of an empty tree
+	// $ git hash-object -t tree /dev/null
+	// 4b825dc642cb6eb9a060e54bf8d69288fbee4904
+	// See https://floatingoctothorpe.uk/2017/empty-trees-in-git.html
+	currentSha, _ := hashing.NewShaFromHex("4b825dc642cb6eb9a060e54bf8d69288fbee4904")
 
 	for _, p := range paths {
 		tree := Tree{
@@ -216,10 +218,8 @@ func treeFromIndex(repo *repository.Repository, idx *index.Index) (string, error
 		}
 
 		for _, e := range contents[p] {
-			modeBytes := make([]byte, 2)
-			enc.PutUint16(modeBytes, uint16(index.ModeTypeRegular))
 			leaf := TreeLeaf{
-				Mode: modeBytes,
+				Mode: index.ModeTypeRegular.Octal(),
 				Sha:  e.SHA,
 				Path: []byte(filepath.Base(e.Name)),
 			}
@@ -229,10 +229,9 @@ func treeFromIndex(repo *repository.Repository, idx *index.Index) (string, error
 
 		sha, err := WriteObject(GitObject(&tree), repo)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
-		currentSha = sha.AsString()
-
+		currentSha = sha
 	}
 
 	return currentSha, nil

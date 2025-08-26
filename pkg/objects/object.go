@@ -210,8 +210,7 @@ func Find(repo *repository.Repository, name string, format GitObjectType, follow
 		return nil, errors.New("did not find any match for object named " + name)
 	}
 
-	hexSha := shas[0]
-	sha, err := hashing.NewShaFromHex(hexSha)
+	sha, err := hashing.NewShaFromHex(shas[0])
 	if err != nil {
 		return nil, fmt.Errorf("malformed candidate: %s", err)
 	}
