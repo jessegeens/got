@@ -19,14 +19,19 @@ import (
 func CommitCommand() *Command {
 	command := newCommand("commit")
 	command.Action = func(args []string) error {
-		message := *flag.String("m", "", "Message to associate with this commit")
+		message := flag.String("m", "", "Message to associate with this commit")
+		flag.Parse()
+		if message == nil || *message == "" {
+			message = flag.String("message", "", "Message to associate with this commit")
+			flag.Parse()
+		}
 
 		repo, err := repository.Find(".")
 		if err != nil {
 			return err
 		}
 
-		_, err = commit(repo, message)
+		_, err = commit(repo, *message)
 		return err
 	}
 	command.Description = func() string { return "Record changes to the repository" }
@@ -74,17 +79,23 @@ func commit(repo *repository.Repository, message string) (*hashing.SHA, error) {
 		}
 
 		err = fs.WriteStringToFile(file, fmt.Sprintf("%s\n", commit.AsString()))
+
+		if err == nil {
+			printCommitResult(branch, message, commit)
+		}
+
+		return commit, err
+	} else {
+		// If we are not on a branch, we update HEAD itself
+		file, err := repo.RepositoryFile(false, "HEAD")
+		if err != nil {
+			return commit, err
+		}
+
+		err = fs.WriteStringToFile(file, commit.AsString()+"\n")
+
 		return commit, err
 	}
-
-	// If we are not on a branch, we update HEAD itself
-	file, err := repo.RepositoryFile(false, "HEAD")
-	if err != nil {
-		return commit, err
-	}
-
-	err = fs.WriteStringToFile(file, commit.AsString()+"\n")
-	return commit, err
 
 }
 
@@ -100,15 +111,7 @@ func createCommit(repo *repository.Repository, tree *hashing.SHA, parent *hashin
 	message = strings.TrimSpace(message) + "\n"
 	data.Message = []byte(message)
 
-	_, offset := time.Now().Zone()
-	offsetDuration := time.Duration(float64(offset) * float64(time.Second))
-	symbol := "+"
-	if offset < 0 {
-		symbol = "-"
-	}
-
-	timezone := fmt.Sprintf("%s%2f%2f", symbol, offsetDuration.Hours(), offsetDuration.Minutes())
-	author = fmt.Sprintf("%s %d %s", author, time.Now().Unix(), timezone)
+	author = fmt.Sprintf("%s %d %s", author, time.Now().Unix(), calculateTimeOffset())
 
 	data.Okv.Set("author", []byte(author))
 	data.Okv.Set("committer", []byte(author))
@@ -116,4 +119,24 @@ func createCommit(repo *repository.Repository, tree *hashing.SHA, parent *hashin
 	commit := objects.NewCommit(data)
 
 	return objects.WriteObject(commit, repo)
+}
+
+func calculateTimeOffset() string {
+	_, offset := time.Now().Zone()
+	offsetDuration := time.Duration(float64(offset) * float64(time.Second))
+	symbol := "+"
+	if offset < 0 {
+		symbol = "-"
+	}
+
+	hours := int(offsetDuration.Hours())
+	minutes := int(offsetDuration.Minutes()) % 60
+
+	timezone := fmt.Sprintf("%s%02d%02d", symbol, hours, minutes)
+	return timezone
+}
+
+func printCommitResult(branch, message string, commit *hashing.SHA) {
+	shortCommit := commit.AsString()[:7]
+	fmt.Printf("[%s %s] %s\n", branch, shortCommit, message)
 }

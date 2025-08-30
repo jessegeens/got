@@ -14,6 +14,7 @@ func RevParseCommand() *Command {
 	command.Action = func(args []string) error {
 		revType := *flag.String("type", "", "Specify the expected type: one of blob, commit, tag, tree")
 		name := *flag.String("name", "", "The name to parse")
+		flag.Parse()
 
 		return revParse(revType, name)
 	}

@@ -16,6 +16,7 @@ func RmCommand() *Command {
 	command := newCommand("rm")
 	command.Action = func(args []string) error {
 		path := *flag.String("path", "", "Specify the path of the file or directory to remove")
+		flag.Parse()
 		repo, err := repository.Find(".")
 		if err != nil {
 			return err

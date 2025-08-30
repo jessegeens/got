@@ -15,6 +15,7 @@ func LsTreeCommand() *Command {
 	command.Action = func(args []string) error {
 		recursive := *flag.Bool("r", false, "Recurse into sub-trees")
 		tree := *flag.String("tree", "", "A tree-ish object")
+		flag.Parse()
 		repo, err := repository.Find(".")
 		if err != nil {
 			return err
