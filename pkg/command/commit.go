@@ -19,7 +19,7 @@ import (
 func CommitCommand() *Command {
 	command := newCommand("commit")
 	command.Action = func(args []string) error {
-		message := *flag.String("message", "", "Message to associate with this commit")
+		message := *flag.String("m", "", "Message to associate with this commit")
 
 		repo, err := repository.Find(".")
 		if err != nil {
@@ -100,8 +100,15 @@ func createCommit(repo *repository.Repository, tree *hashing.SHA, parent *hashin
 	message = strings.TrimSpace(message) + "\n"
 	data.Message = []byte(message)
 
-	// TODO: format time
-	// author = author + timestamp
+	_, offset := time.Now().Zone()
+	offsetDuration := time.Duration(float64(offset) * float64(time.Second))
+	symbol := "+"
+	if offset < 0 {
+		symbol = "-"
+	}
+
+	timezone := fmt.Sprintf("%s%2f%2f", symbol, offsetDuration.Hours(), offsetDuration.Minutes())
+	author = fmt.Sprintf("%s %d %s", author, time.Now().Unix(), timezone)
 
 	data.Okv.Set("author", []byte(author))
 	data.Okv.Set("committer", []byte(author))

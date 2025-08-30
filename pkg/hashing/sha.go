@@ -10,8 +10,6 @@ type SHA struct {
 	hash []byte
 }
 
-// `data` must always be of length 20
-// TODO: add a check and error if this fails
 func NewSHA(data []byte) *SHA {
 	hasher := sha1.New()
 	hasher.Write(data)
