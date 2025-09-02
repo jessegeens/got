@@ -48,13 +48,13 @@ func statusBranch(repo *repository.Repository) error {
 		return err
 	}
 	if onBranch {
-		fmt.Printf("On branch %s\n", branch)
+		fmt.Printf("On branch %s\n\n", branch)
 	} else {
 		obj, err := objects.Find(repo, "HEAD", objects.TypeNoTypeSpecified, true)
 		if err != nil {
 			return err
 		} else {
-			fmt.Printf("HEAD detached at %s\n", obj)
+			fmt.Printf("HEAD detached at %s\n\n", obj)
 		}
 	}
 	return nil
@@ -64,8 +64,11 @@ func statusBranch(repo *repository.Repository) error {
 func statusHeadIndex(repo *repository.Repository, idx *index.Index) error {
 	head, err := objects.MapFromTree(repo, "HEAD")
 	if err != nil {
-		fmt.Printf("No commits yet\n")
-		//return err
+		fmt.Printf("No commits yet\n\n")
+	}
+
+	if len(idx.Entries) > 0 || len(head) > 0 {
+		fmt.Println("Changes to be committed:")
 	}
 
 	for _, entry := range idx.Entries {
@@ -104,6 +107,9 @@ func statusIndexWorktree(repo *repository.Repository, idx *index.Index) error {
 		if err != nil {
 			return err
 		}
+		if relativePath == ".git" || relativePath == "." {
+			return nil
+		}
 		allFiles = append(allFiles, relativePath)
 		return nil
 	})
@@ -111,15 +117,15 @@ func statusIndexWorktree(repo *repository.Repository, idx *index.Index) error {
 		return err
 	}
 
-	printed := false
+	hasPrinted := false
 
 	// Now we traverse the index and compare real files with the cached versions
 	for _, entry := range idx.Entries {
 		fullPath := path.Join(repo.WorkTree(), entry.Name)
 		if !fs.Exists(fullPath) {
-			if !printed {
+			if !hasPrinted {
 				fmt.Println("\nChanges not staged for commit:")
-				printed = true
+				hasPrinted = true
 			}
 			fmt.Printf("  deleted: %s\n", entry.Name)
 		} else {
@@ -140,9 +146,9 @@ func statusIndexWorktree(repo *repository.Repository, idx *index.Index) error {
 				}
 
 				if newSha != entry.SHA {
-					if !printed {
+					if !hasPrinted {
 						fmt.Println("\nChanges not staged for commit:")
-						printed = true
+						hasPrinted = true
 					}
 					fmt.Printf("  modified: %s\n", entry.Name)
 				}
@@ -153,9 +159,13 @@ func statusIndexWorktree(repo *repository.Repository, idx *index.Index) error {
 
 	// Everything that's left in allFiles was not found in the index,
 	// so those files are not tracked
-	fmt.Println("\nUntracked files:")
+	hasPrinted = false
 	for _, file := range allFiles {
 		if !ignore.ShouldBeIgnored(file) {
+			if !hasPrinted {
+				fmt.Println("\nUntracked files:")
+				hasPrinted = true
+			}
 			fmt.Printf("  %s\n", file)
 		}
 	}

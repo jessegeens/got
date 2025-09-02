@@ -22,13 +22,20 @@ func AddCommand() *Command {
 		if len(args) < 1 {
 			return errors.New("must specify a path to add")
 		}
-		path := args[0]
+		//paths := args[0]
 		repo, err := repository.Find(".")
 		if err != nil {
 			return err
 		}
 
-		return add(repo, path, true)
+		for _, path := range args {
+			err = add(repo, path, true)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
 	command.Description = func() string { return "Add files contents to the index" }
 	return command
