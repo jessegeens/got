@@ -3,7 +3,7 @@ package command
 import (
 	"flag"
 
-	"github.com/jessegeens/go-toolbox/pkg/repository"
+	"github.com/jessegeens/got/pkg/repository"
 )
 
 func InitCommand() *Command {

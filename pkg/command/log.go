@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jessegeens/go-toolbox/pkg/hashing"
-	"github.com/jessegeens/go-toolbox/pkg/objects"
-	"github.com/jessegeens/go-toolbox/pkg/repository"
+	"github.com/jessegeens/got/pkg/hashing"
+	"github.com/jessegeens/got/pkg/objects"
+	"github.com/jessegeens/got/pkg/repository"
 )
 
 func LogCommand() *Command {

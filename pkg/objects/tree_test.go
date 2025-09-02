@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jessegeens/go-toolbox/pkg/hashing"
-	"github.com/jessegeens/go-toolbox/pkg/index"
-	"github.com/jessegeens/go-toolbox/pkg/repository"
+	"github.com/jessegeens/got/pkg/hashing"
+	"github.com/jessegeens/got/pkg/index"
+	"github.com/jessegeens/got/pkg/repository"
 )
 
 func generateFakeHashFromChar(char byte) *hashing.SHA {

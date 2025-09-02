@@ -4,7 +4,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/jessegeens/go-toolbox/pkg/hashing"
+	"github.com/jessegeens/got/pkg/hashing"
 )
 
 type ModeType uint16

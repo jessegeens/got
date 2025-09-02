@@ -3,8 +3,8 @@ package command
 import (
 	"fmt"
 
-	"github.com/jessegeens/go-toolbox/pkg/references"
-	"github.com/jessegeens/go-toolbox/pkg/repository"
+	"github.com/jessegeens/got/pkg/references"
+	"github.com/jessegeens/got/pkg/repository"
 )
 
 func ShowRefCommand() *Command {

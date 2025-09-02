@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/jessegeens/go-toolbox/pkg/ignore"
-	"github.com/jessegeens/go-toolbox/pkg/repository"
+	"github.com/jessegeens/got/pkg/ignore"
+	"github.com/jessegeens/got/pkg/repository"
 )
 
 func CheckIgnoreCommand() *Command {

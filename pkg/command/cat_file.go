@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jessegeens/go-toolbox/pkg/objects"
-	"github.com/jessegeens/go-toolbox/pkg/repository"
+	"github.com/jessegeens/got/pkg/objects"
+	"github.com/jessegeens/got/pkg/repository"
 )
 
 func CatFileCommand() *Command {

@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jessegeens/go-toolbox/pkg/index"
-	"github.com/jessegeens/go-toolbox/pkg/repository"
+	"github.com/jessegeens/got/pkg/index"
+	"github.com/jessegeens/got/pkg/repository"
 )
 
 func RmCommand() *Command {

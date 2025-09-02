@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jessegeens/go-toolbox/pkg/index"
-	"github.com/jessegeens/go-toolbox/pkg/kvlm"
-	"github.com/jessegeens/go-toolbox/pkg/repository"
+	"github.com/jessegeens/got/pkg/index"
+	"github.com/jessegeens/got/pkg/kvlm"
+	"github.com/jessegeens/got/pkg/repository"
 )
 
 func setupTestRepo(t *testing.T) *repository.Repository {

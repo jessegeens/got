@@ -11,10 +11,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jessegeens/go-toolbox/pkg/fs"
-	"github.com/jessegeens/go-toolbox/pkg/hashing"
-	"github.com/jessegeens/go-toolbox/pkg/references"
-	"github.com/jessegeens/go-toolbox/pkg/repository"
+	"github.com/jessegeens/got/pkg/fs"
+	"github.com/jessegeens/got/pkg/hashing"
+	"github.com/jessegeens/got/pkg/references"
+	"github.com/jessegeens/got/pkg/repository"
 )
 
 type GitObject interface {

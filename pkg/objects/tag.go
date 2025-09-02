@@ -1,6 +1,6 @@
 package objects
 
-import "github.com/jessegeens/go-toolbox/pkg/kvlm"
+import "github.com/jessegeens/got/pkg/kvlm"
 
 type Tag Commit
 

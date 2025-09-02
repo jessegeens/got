@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jessegeens/go-toolbox/pkg/fs"
+	"github.com/jessegeens/got/pkg/fs"
 	"gopkg.in/ini.v1"
 )
 

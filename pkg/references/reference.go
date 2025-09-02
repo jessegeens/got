@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/jessegeens/go-toolbox/pkg/fs"
-	"github.com/jessegeens/go-toolbox/pkg/repository"
+	"github.com/jessegeens/got/pkg/fs"
+	"github.com/jessegeens/got/pkg/repository"
 )
 
 type Reference string

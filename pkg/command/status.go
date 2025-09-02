@@ -8,11 +8,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jessegeens/go-toolbox/pkg/fs"
-	"github.com/jessegeens/go-toolbox/pkg/ignore"
-	"github.com/jessegeens/go-toolbox/pkg/index"
-	"github.com/jessegeens/go-toolbox/pkg/objects"
-	"github.com/jessegeens/go-toolbox/pkg/repository"
+	"github.com/jessegeens/got/pkg/fs"
+	"github.com/jessegeens/got/pkg/ignore"
+	"github.com/jessegeens/got/pkg/index"
+	"github.com/jessegeens/got/pkg/objects"
+	"github.com/jessegeens/got/pkg/repository"
 )
 
 func StatusCommand() *Command {

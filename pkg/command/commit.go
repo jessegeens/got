@@ -7,13 +7,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jessegeens/go-toolbox/pkg/config"
-	"github.com/jessegeens/go-toolbox/pkg/fs"
-	"github.com/jessegeens/go-toolbox/pkg/hashing"
-	"github.com/jessegeens/go-toolbox/pkg/index"
-	"github.com/jessegeens/go-toolbox/pkg/kvlm"
-	"github.com/jessegeens/go-toolbox/pkg/objects"
-	"github.com/jessegeens/go-toolbox/pkg/repository"
+	"github.com/jessegeens/got/pkg/config"
+	"github.com/jessegeens/got/pkg/fs"
+	"github.com/jessegeens/got/pkg/hashing"
+	"github.com/jessegeens/got/pkg/index"
+	"github.com/jessegeens/got/pkg/kvlm"
+	"github.com/jessegeens/got/pkg/objects"
+	"github.com/jessegeens/got/pkg/repository"
 )
 
 func CommitCommand() *Command {
