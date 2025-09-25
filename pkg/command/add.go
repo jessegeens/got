@@ -28,7 +28,7 @@ func AddCommand() *Command {
 			return err
 		}
 
-		for _, path := range args {
+		for _, path := range extractPathsFromArgs(args) {
 			err = add(repo, path, true)
 			if err != nil {
 				return err
@@ -117,8 +117,41 @@ func add(repo *repository.Repository, addPath string, delete bool) error {
 			Name:            relPath,
 		}
 
-		idx.Entries = append(idx.Entries, entry)
+		idx.Entries = appendIfUnique(idx.Entries, entry)
 	}
 
 	return idx.Write(repo)
+}
+
+func extractPathsFromArgs(args []string) []string {
+	if args[0] == "." {
+		paths := make([]string, 0)
+		entries, _ := os.ReadDir("./")
+		for _, entry := range entries {
+			paths = append(paths, entry.Name())
+		}
+		return paths
+	}
+
+	return args
+}
+
+// Only append if the value is not there yet
+func appendIfUnique(entries []*index.Entry, entry *index.Entry) []*index.Entry {
+	for i, e := range entries {
+		// Same file with same contents
+		// No need to change anything
+		if e.SHA.AsString() == entry.SHA.AsString() {
+			return entries
+		}
+		// Same file with different entries
+		// => the old version should not be written to the index
+		// so we remove it
+		if e.Inode == entry.Inode && e.Dev == entry.Dev {
+			entries = append(entries[:i], entries[i+1:]...)
+			return append(entries, entry)
+		}
+	}
+	// Actually new file, we just append
+	return append(entries, entry)
 }

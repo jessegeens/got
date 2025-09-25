@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	gouser "os/user"
+
 	"github.com/jessegeens/got/pkg/config"
 	"github.com/jessegeens/got/pkg/fs"
 	"github.com/jessegeens/got/pkg/hashing"
@@ -54,7 +56,13 @@ func commit(repo *repository.Repository, message string) (*hashing.SHA, error) {
 
 	user, ok := cfg.GetUser()
 	if !ok {
-		user = "DefaultUser"
+		systemUser, err := gouser.Current()
+		// TODO: turn into user@host
+		if err == nil {
+			user = systemUser.Username
+		} else {
+			user = "User"
+		}
 	}
 
 	// We don't have to find the parent, so we can ignore the error
