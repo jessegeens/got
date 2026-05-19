@@ -26,6 +26,7 @@ var (
 		command.ShowRefCommand(),
 		command.StatusCommand(),
 		command.TagCommand(),
+		command.FetchCommand(),
 	}
 )
 
